@@ -5,7 +5,7 @@ Minimalist maximum likelihood fitter in (mostly) NumPy, with extensibility for B
 
 Model specification
 ---
-Model specification is done within name_scopes (a la TensorFlow), such that each model component and parameter is named according to the scope in which it resides, but this doesn't have to be manually constructed by the user.
+Model specification is done within name_scopes (à la TensorFlow), such that each model component and parameter is named according to the scope in which it resides, but this doesn't have to be manually constructed by the user.
 
 ``` python
 
