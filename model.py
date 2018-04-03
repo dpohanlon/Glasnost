@@ -16,8 +16,8 @@ class Model(Distribution):
 
     def getParameterNames(self):
         names = []
-        for c in self.fitComponents:
-            names += c.getParameterNames()
+        for c in self.fitComponents.values():
+            names += list(map(lambda x : self.name + '-' + x, c.getParameterNames()))
 
         return names
 
@@ -27,10 +27,13 @@ class Model(Distribution):
 
     def lnprob(self, data):
 
+        # This assumes that the total likelihood is a sum over components
+
         nObs = len(data)
         totalYield = np.sum(list(self.fitYields.values()))
 
         # COPIES of dictionary values
+        # In future: https://docs.python.org/2/library/stdtypes.html#dictionary-view-objects
         components = list(self.fitComponents.values())
         yields = list(self.fitYields.values())
 
@@ -41,7 +44,7 @@ class Model(Distribution):
         p = np.sum(p, 0)
 
         # Take log of each component, (sum over data axis to get total log-likelihood)
-        p = np.log(p)
+        p = np.log(p) #+ nObs * np.log(totalYield) - totalYield
 
         return p
 
@@ -51,4 +54,9 @@ class Model(Distribution):
 
     def lnprobVal(self, data):
 
-        return np.sum(self.lnprob(data))
+        # With EML criteria
+
+        nObs = len(data)
+        totalYield = np.sum(list(self.fitYields.values()))
+
+        return np.sum(self.lnprob(data)) + nObs * np.log(totalYield) - totalYield

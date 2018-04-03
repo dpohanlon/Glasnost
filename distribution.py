@@ -87,7 +87,7 @@ class Gaussian(Distribution):
 
     def getParameterNames(self):
 
-        return ['mean', 'sigma']
+        return [self.name + '-mean', self.name + '-sigma']
 
     def lnprob(self, data):
 
