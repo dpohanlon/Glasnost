@@ -30,7 +30,7 @@ class Parameter(object):
         if self.priorDistribution = False:
             return self.value_
         else:
-            return self.priorDistribution.randomSample()
+            return self.priorDistribution.randomSample() # TODO: Implement me
 
     def updateValue(self, value):
         self.value_ = value
