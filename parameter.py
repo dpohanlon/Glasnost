@@ -9,8 +9,8 @@ class Parameter(object):
         self.initialValue = initialValue
         self.value_ = self.initialValue
 
-        self.min = minVal if maxVal else value - 3. * value
-        self.max = maxVal if maxVal else value + 3. * value
+        self.min = minVal if maxVal else self.initialValue - 3. * self.initialValue
+        self.max = maxVal if maxVal else self.initialValue + 3. * self.initialValue
 
         self.priorDistribution = priorDistribution
 
