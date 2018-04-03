@@ -25,6 +25,11 @@ class Distribution(object):
         setattr(self, paramName, paramValue)
 
     @abstractmethod
+    def getParameterNames(self):
+
+        pass
+
+    @abstractmethod
     def prob(self, data):
 
         pass
@@ -45,6 +50,14 @@ class Distribution(object):
     def lnprior(self, data):
 
         return np.zeros(data.shape)
+
+    def __getitem__(self, name):
+
+        if hasattr(self, name):
+            return getattr(self, name)
+        else:
+            # throw
+            return None
 
     def __call__(self, data):
 
@@ -71,6 +84,10 @@ class Gaussian(Distribution):
         e = - ((data - m) ** 2) / (2. * s ** 2)
 
         return g * np.exp(e)
+
+    def getParameterNames(self):
+
+        return ['mean', 'sigma']
 
     def lnprob(self, data):
 
