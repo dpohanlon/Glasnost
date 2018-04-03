@@ -3,14 +3,14 @@ import numpy as np
 class Parameter(object):
     """docstring for [object Object]."""
 
-    def __init__(self, name, initialValue, min = None, max = None, fixed = False, priorDistribution = None):
+    def __init__(self, name, initialValue, minVal = None, maxVal = None, fixed = False, priorDistribution = None):
 
         self.name = name
         self.initialValue = initialValue
         self.value_ = self.initialValue
 
-        self.min = min if max else value - 3. * value
-        self.max = max if max else value + 3. * value
+        self.min = minVal if maxVal else value - 3. * value
+        self.max = maxVal if maxVal else value + 3. * value
 
         self.priorDistribution = priorDistribution
 
