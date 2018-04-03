@@ -44,7 +44,7 @@ class Model(Distribution):
         p = np.sum(p, 0)
 
         # Take log of each component, (sum over data axis to get total log-likelihood)
-        p = np.log(p) #+ nObs * np.log(totalYield) - totalYield
+        p = np.log(p)
 
         return p
 

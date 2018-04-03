@@ -7,10 +7,10 @@ class Distribution(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, initialParams = None):
+    def __init__(self, name, parameters = None):
 
         self.name = name
-        self.initialParams = initialParams
+        self.parameters = parameters
 
     def updateParameters(self, parameters):
 
@@ -68,12 +68,33 @@ class Distribution(object):
 class Gaussian(Distribution):
     """docstring for [object Object]."""
 
-    def __init__(self, name, initialParams = None):
+    # Takes dictionary of Parameters with name mean and sigma
+    def __init__(self, name, parameters = None):
 
-        super(Gaussian, self).__init__(name, initialParams)
+        super(Gaussian, self).__init__(name, parameters)
 
-        self.mean = self.initialParams['mean'] if 'mean' in self.initialParams else 0.0
-        self.sigma = self.initialParams['sigma'] if 'sigma' in self.initialParams else 1.0
+        # Names correspond to input parameter dictionary
+        self.mean = self.parameters['mean']
+        self.sigma = self.parameters['sigma']
+
+        self.meanParamName = 'mean'
+        self.sigmaParamName = 'sigma'
+
+        # Names of actual parameter objects
+        self.paramNames = [p.name for p in parameters]
+
+    # mean, sigma are functions that always return the mean, sigma parameter from the dictionary,
+    # which is updatable , without knowing the exact name of the sigma parameter in this model
+
+    @property
+    def sigma(self):
+
+        return self.parameters[self.sigmaParamName]
+
+    @property
+    def mean(self):
+
+        return self.parameters[self.meanParamName]
 
     def prob(self, data):
 
@@ -87,7 +108,7 @@ class Gaussian(Distribution):
 
     def getParameterNames(self):
 
-        return [self.name + '-mean', self.name + '-sigma']
+        return self.paramNames
 
     def lnprob(self, data):
 
