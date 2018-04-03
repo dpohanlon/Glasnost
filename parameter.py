@@ -27,7 +27,7 @@ class Parameter(object):
 
     @property
     def value(self):
-        if self.priorDistribution = False:
+        if self.priorDistribution == False:
             return self.value_
         else:
             return self.priorDistribution.randomSample() # TODO: Implement me

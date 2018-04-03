@@ -1,4 +1,4 @@
-from distribution import Distribution
+from Glasnost.distribution import Distribution
 
 import numpy as np
 
