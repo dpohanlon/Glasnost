@@ -15,4 +15,4 @@ with gl.name_scope("massFit"):
         s = gl.Parameter(name = 'sigma') # Full name is 'massFit/coreGaussian/sigma'
 
         gCore = gl.Gaussian(m, s) # Full name is 'massFit/coreGaussian'
-`
+```
