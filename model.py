@@ -3,11 +3,21 @@ from distribution import Distribution
 import numpy as np
 
 class Model(Distribution):
-    """docstring for [object Object]."""
+
+    """
+
+    Class corresponding to a composite likelihood model. Inherits from Distribution (implements prob
+    and log-prob functions). Initialised with yields (dictionary of names to Parameters) and fit
+    components (dictionary of names to Distributions). By default, assume extended maximum likelihood
+    fit, where all input distributions are summed.
+
+    """
 
     def __init__(self, name, initialFitYields = None, initialFitComponents = None):
 
         super(Model, self).__init__(name)
+
+        # TODO: Fix me
 
         self.fitYields = initialFitYields
 

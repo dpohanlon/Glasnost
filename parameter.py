@@ -1,7 +1,14 @@
 import numpy as np
 
 class Parameter(object):
-    """docstring for [object Object]."""
+
+    """
+
+    Parameter class for storing parameter information. This includes the name, value, ranges, whether the
+    parameter is fixed, and the prior probability distribution of the parameter. Contains member functions
+    to access and modify the value of the parameter.
+
+    """
 
     def __init__(self, name, initialValue, minVal = None, maxVal = None, fixed = False, priorDistribution = None):
 

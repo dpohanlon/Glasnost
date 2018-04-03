@@ -3,7 +3,15 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 
 class Distribution(object):
-    """docstring for [object Object]."""
+
+    """
+
+    Abstract base class for distributions. Member functions that are abstract are those that
+    provide the likelihood, log-likelihood, and parameter names. Provides methods to update
+    distribution parameters, and operators to get parameters by name, and obtain the
+    log-posterior (log likelihood + log prior).
+
+    """
 
     __metaclass__ = ABCMeta
 
@@ -66,7 +74,13 @@ class Distribution(object):
         return lnprior if any(lnprior == -np.inf) else lnprior + self.lnprob(data)
 
 class Gaussian(Distribution):
-    """docstring for [object Object]."""
+
+    """
+
+    One dimensional Gaussian (normal) distribution. Inherits from Distribution. Parameterised
+    with mean and width (sigma).
+
+    """
 
     # Takes dictionary of Parameters with name mean and sigma
     def __init__(self, name, parameters = None):
@@ -126,13 +140,13 @@ class Gaussian(Distribution):
 
     def prior(self, data):
 
-        p = 1.0 if self.sigma > 0 else 0.0
+        p = 1.0 if self.sigma > 0.0 else 0.0
 
         return p * np.ones(data.shape)
 
     def lnprior(self, data):
 
-        p = 0.0 if self.sigma > 0 else -np.inf
+        p = 0.0 if self.sigma > 0.0 else -np.inf
 
         return p * np.ones(data.shape)
 
