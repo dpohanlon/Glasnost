@@ -13,7 +13,7 @@ class Model(Distribution):
 
     """
 
-    def __init__(self, name, initialFitYields = None, initialFitComponents = None):
+    def __init__(self, initialFitYields = None, initialFitComponents = None, name = ''):
 
         super(Model, self).__init__(name)
 
@@ -45,7 +45,12 @@ class Model(Distribution):
         # COPIES of dictionary values
         # In future: https://docs.python.org/2/library/stdtypes.html#dictionary-view-objects
         components = list(self.fitComponents.values())
-        yields = list(self.fitYields.values())
+
+        # Explicitly use y.value_ otherwise this fills the parameter with an array
+        # Would be nice only to use the Parameter operations when specified
+        # FIX ME!
+
+        yields = list([y.value_ for y in self.fitYields.values()])
 
         # Matrix of (nComponents, nData) -> uses lots of memory, rewrite using einsum?
         p = np.vstack([ yields[i] * components[i].prob(data) for i in range(len(components)) ])
