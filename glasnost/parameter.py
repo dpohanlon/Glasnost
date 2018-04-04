@@ -1,5 +1,7 @@
 import numpy as np
 
+import glasnost as gl
+
 class Parameter(object):
 
     """
@@ -12,7 +14,8 @@ class Parameter(object):
 
     def __init__(self, name, initialValue, minVal = None, maxVal = None, fixed = False, priorDistribution = None):
 
-        self.name = name
+        self.name = gl.utils.nameScope + name
+
         self.initialValue = initialValue
         self.value_ = self.initialValue
 

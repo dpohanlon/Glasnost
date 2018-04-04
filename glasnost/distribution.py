@@ -2,6 +2,8 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
+import glasnost as gl
+
 class Distribution(object):
 
     """
@@ -15,9 +17,9 @@ class Distribution(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, parameters = None):
+    def __init__(self, name = '', parameters = None):
 
-        self.name = name
+        self.name = gl.utils.nameScope.rstrip('/') if not name else gl.utils.nameScope + name
         self.parameters = parameters
 
     def updateParameters(self, parameters):
@@ -83,7 +85,7 @@ class Gaussian(Distribution):
     """
 
     # Takes dictionary of Parameters with name mean and sigma
-    def __init__(self, name, parameters = None):
+    def __init__(self, name = '', parameters = None):
 
         super(Gaussian, self).__init__(name, parameters)
 
