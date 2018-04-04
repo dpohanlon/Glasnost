@@ -17,7 +17,7 @@ class Distribution(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, name = '', parameters = None):
+    def __init__(self, parameters = None, name = ''):
 
         self.name = gl.utils.nameScope.rstrip('/') if not name else gl.utils.nameScope + name
         self.parameters = parameters
@@ -75,6 +75,9 @@ class Distribution(object):
 
         return lnprior if any(lnprior == -np.inf) else lnprior + self.lnprob(data)
 
+    def __repr__(self):
+        return "%s: %s" % (self.name, self.parameters.items())
+
 class Gaussian(Distribution):
 
     """
@@ -85,19 +88,19 @@ class Gaussian(Distribution):
     """
 
     # Takes dictionary of Parameters with name mean and sigma
-    def __init__(self, name = '', parameters = None):
+    def __init__(self, parameters = None, name = 'gaussian'):
 
-        super(Gaussian, self).__init__(name, parameters)
+        super(Gaussian, self).__init__(parameters, name)
 
         # Names correspond to input parameter dictionary
-        self.mean = self.parameters['mean']
-        self.sigma = self.parameters['sigma']
+        # self.mean = self.parameters['mean']
+        # self.sigma = self.parameters['sigma']
 
         self.meanParamName = 'mean'
         self.sigmaParamName = 'sigma'
 
         # Names of actual parameter objects
-        self.paramNames = [p.name for p in parameters]
+        self.paramNames = [p.name for p in parameters.values()]
 
     # mean, sigma are functions that always return the mean, sigma parameter from the dictionary,
     # which is updatable , without knowing the exact name of the sigma parameter in this model
