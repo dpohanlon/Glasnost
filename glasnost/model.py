@@ -13,7 +13,7 @@ class Model(Distribution):
 
     """
 
-    def __init__(self, initialFitYields = None, initialFitComponents = None, name = ''):
+    def __init__(self, initialFitYields = None, initialFitComponents = None, data = None, name = ''):
 
         super(Model, self).__init__(name)
 
@@ -24,10 +24,33 @@ class Model(Distribution):
         # dictionary of (model name, distribution)
         self.fitComponents = initialFitComponents
 
-    def getParameterNames(self):
+        self.data = data
+
+    # Only floating
+    def getComponentFloatingParameterNames(self):
+
         names = []
+
         for c in self.fitComponents.values():
+
+            if c.isFixed:
+                continue
+
             names += list(map(lambda x : self.name + '-' + x, c.getParameterNames()))
+
+        return names
+
+    def getFloatingParameterNames(self):
+
+        names = getComponentFloatingParameterNames()
+
+        # Add yields from the model
+        for y in self.fitYields.values():
+
+            if y.isFixed:
+                continue
+
+            names += y.name
 
         return names
 
@@ -75,3 +98,29 @@ class Model(Distribution):
         totalYield = np.sum(list(self.fitYields.values()))
 
         return np.sum(self.lnprob(data)) + nObs * np.log(totalYield) - totalYield
+
+    def setData(self, data):
+
+        # For using __call__
+
+        self.data = data
+
+    @property
+    def hasData(self):
+
+        return self.data is not None
+
+    def __call__(self, *params):
+
+        # used by iminuit (+ to determine parameters)
+
+        paramNames = self.getFloatingParameterNames()
+
+        if len(paramNames) != len(params):
+            print('Number of parameters differs from the number of floating parameters of the model.')
+            exit(1)
+
+        for i, param in enumerate(params):
+            self.parameters(paramNames[i]).updateValue(param)
+
+        return self.lnprobVal(data)

@@ -14,7 +14,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     def __init__(self, initialValue, name = '', minVal = None, maxVal = None, fixed = False, priorDistribution = None):
 
-        self.name = gl.utils.nameScope + name
+        self.name_ = gl.utils.nameScope + name
 
         self.initialValue = initialValue
         self.value_ = self.initialValue
@@ -24,7 +24,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
         self.priorDistribution = priorDistribution
 
-        self.fixed = False
+        self.fixed_ = False
 
         # Can envision blinding, errors, etc
 
@@ -46,6 +46,10 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
         return getattr(ufunc, method)(*inputs, **kwargs)
 
     @property
+    def name(self):
+        return name_
+
+    @property
     def value(self):
         if self.priorDistribution == None:
             return self.value_
@@ -54,6 +58,10 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     def updateValue(self, value):
         self.value_ = value
+
+    @property
+    def isFixed(self):
+        return self.fixed_
 
     # Built in Parameter operations that can return Parameters. If numpy operations, the operation gets
     # deferred to __array_ufunc__ to return floats/numpy arrays
