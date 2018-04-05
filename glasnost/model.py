@@ -24,6 +24,11 @@ class Model(Distribution):
         # dictionary of (model name, distribution)
         self.fitComponents = initialFitComponents
 
+        self.fitComponentParameterNames = {}
+
+        for componentName, component in initialFitComponents.items():
+            self.fitComponentParameterNames[componentName] = component.getParameterNames()
+
         self.data = data
 
     # Only floating
@@ -53,6 +58,19 @@ class Model(Distribution):
             names += y.name
 
         return names
+
+    def getFloatingParameterValues(self):
+
+        values = []
+
+        for y in self.fitYields.values():
+            values.append(y.value)
+
+        for c in self.fitComponents.values():
+            for v in c.getParameters():
+                values.append(v.value)
+
+        return values
 
     def prob(self, data):
 
@@ -105,10 +123,24 @@ class Model(Distribution):
 
         self.data = data
 
+    def getData(self, data):
+
+        if self.hasData:
+            return self.data
+        else:
+            return None
+
     @property
     def hasData(self):
 
         return self.data is not None
+
+    def getInitialParameterValues(self):
+
+        # Return initial parameters so that __call__ can be called initially with the correct number
+        # and with the parameters in the correct order
+
+        return getFloatingParameterValues()
 
     def __call__(self, *params):
 

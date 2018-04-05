@@ -34,6 +34,9 @@ class Distribution(object):
 
         setattr(self, paramName, paramValue)
 
+    def getParameters(self):
+        return self.parameters
+
     @abstractmethod
     def getParameterNames(self):
 

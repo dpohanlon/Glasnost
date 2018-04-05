@@ -47,7 +47,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     @property
     def name(self):
-        return name_
+        return self.name_
 
     @property
     def value(self):
