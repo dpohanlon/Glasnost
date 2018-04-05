@@ -19,11 +19,11 @@ class Model(Distribution):
 
         super(Model, self).__init__(name)
 
-        # TODO: Fix me
+        # Dictionary of distribution names to yield Parameters
 
         self.fitYields = initialFitYields
 
-        # dictionary of (model name, distribution)
+        # Dictionary of distribution names to distributions
         self.fitComponents = initialFitComponents
 
         self.fitComponentParameterNames = {}
@@ -31,12 +31,25 @@ class Model(Distribution):
         for componentName, component in initialFitComponents.items():
             self.fitComponentParameterNames[componentName] = component.getParameterNames()
 
+        self.parameters = {}
+
+        for component in initialFitComponents.values():
+            for parameter in component.getParameters().values():
+                self.parameters[parameter.name] = parameter
+
+        for y in initialFitYields.values():
+            self.parameters[y.name] = y
+
         self.data = data
 
-        # For iminuit's parameter introspection
+        floatingParameterNames = self.getFloatingParameterNames()
 
-        self.func_code = Struct(co_varnames = self.getFloatingParameterNames(),
-                                co_argcount = len(self.getFloatingParameterNames())
+        # For iminuit's parameter introspection
+        # Gets screwed up if parameters are changed between fixed and floating
+        # Make sure this is propagated (somehow?)
+
+        self.func_code = Struct(co_varnames = floatingParameterNames,
+                                co_argcount = len(floatingParameterNames)
                                 )
 
     # Only floating
@@ -46,7 +59,7 @@ class Model(Distribution):
 
         for c in self.fitComponents.values():
 
-            names += list(map(lambda x : self.name + '-' + x, c.getFloatingParameterNames()))
+            names += list(map(lambda x : x, c.getFloatingParameterNames()))
 
         return names
 
@@ -66,14 +79,14 @@ class Model(Distribution):
 
     def getFloatingParameterValues(self):
 
-        values = []
+        values = {}
 
         for y in self.fitYields.values():
-            values.append(y.value)
+            values[y.name] = y.value
 
         for c in self.fitComponents.values():
             for v in c.getParameters().values():
-                values.append(v.value)
+                values[v.name] = v.value
 
         return values
 
@@ -124,7 +137,7 @@ class Model(Distribution):
 
     def setData(self, data):
 
-        # For using __call__
+        # For using __call__ with no data
 
         self.data = data
 
@@ -134,6 +147,9 @@ class Model(Distribution):
             return self.data
         else:
             return None
+
+    def getNFloatingParameters(self):
+        return len(self.getFloatingParameterNames())
 
     @property
     def hasData(self):
@@ -147,15 +163,25 @@ class Model(Distribution):
 
         return self.getFloatingParameterValues()
 
+    def getInitialParameterValuesAndStepSizes(self):
+        out = self.getFloatingParameterValues()
+
+        # Maybe one day set this more intelligently
+
+        for k, v in self.getFloatingParameterValues().items():
+            out['error_' + k] = 0.1 * v
+
+        return out
+
     def __call__(self, **params):
 
-        if len(paramNames) != len(params):
+        # params is a dictionary of parameter names to floats (representing the initial configuration)
+
+        if self.getNFloatingParameters() != len(params):
             print('Number of parameters differs from the number of floating parameters of the model.')
             exit(1)
 
-        # for i, param in enumerate(params):
-        #     self.parameters(paramNames[i]).updateValue(param)
-        #
-        # return self.lnprobVal(data)
+        for n, v in params.items():
+            self.parameters[n].updateValue(v)
 
-        return np.sum(params)
+        return self.lnprobVal(self.data)

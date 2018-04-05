@@ -19,7 +19,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
         self.initialValue = initialValue
         self.value_ = self.initialValue
 
-        self.min = minVal if maxVal else self.initialValue - 3. * self.initialValue
+        self.min = minVal if minVal else self.initialValue - 3. * self.initialValue
         self.max = maxVal if maxVal else self.initialValue + 3. * self.initialValue
 
         self.priorDistribution = priorDistribution
@@ -27,9 +27,6 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
         self.fixed_ = False
 
         # Can envision blinding, errors, etc
-
-    def __float__(self):
-        return self.value_
 
     def __repr__(self):
         return "%s: %s" % (self.name, self.value_)
@@ -63,6 +60,9 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
     def isFixed(self):
         return self.fixed_
 
+    def __float__(self):
+        return self.value_
+
     # Built in Parameter operations that can return Parameters. If numpy operations, the operation gets
     # deferred to __array_ufunc__ to return floats/numpy arrays
 
@@ -87,6 +87,16 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
             return Parameter(self.value_ - other.value_, name = self.name + '-sub-' + other.name)
         else:
             return Parameter(self.value_ - other, name = self.name + '-sub-float')
+
+    __rsub__ = __sub__
+
+    def _div__(self, other):
+        if isinstance(other, Parameter):
+            return Parameter(self.value_ / other.value_, name = self.name + '-div-' + other.name)
+        else:
+            return Parameter(self.value_ / other, name = self.name + '-div-float')
+
+    __rdiv_ = _div__
 
     def __pow__(self, other):
         if isinstance(other, Parameter):
