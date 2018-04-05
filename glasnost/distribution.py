@@ -103,7 +103,7 @@ class Gaussian(Distribution):
         self.sigmaParamName = 'sigma'
 
         # Names of actual parameter objects
-        self.paramNames = [p.name for p in parameters.values()]
+        self.paramNames = [p.name for p in self.parameters.values()]
 
     # mean, sigma are functions that always return the mean, sigma parameter from the dictionary,
     # which is updatable , without knowing the exact name of the sigma parameter in this model
@@ -131,6 +131,10 @@ class Gaussian(Distribution):
     def getParameterNames(self):
 
         return self.paramNames
+
+    def getFloatingParameterNames(self):
+
+        return [p.name for p in filter(lambda p : not p.isFixed, self.parameters.values())]
 
     def lnprob(self, data):
 

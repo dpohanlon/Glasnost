@@ -1,5 +1,7 @@
 from glasnost.distribution import Distribution
 
+from iminuit.util import Struct
+
 import numpy as np
 
 class Model(Distribution):
@@ -31,6 +33,12 @@ class Model(Distribution):
 
         self.data = data
 
+        # For iminuit's parameter introspection
+
+        self.func_code = Struct(co_varnames = self.getFloatingParameterNames(),
+                                co_argcount = len(self.getFloatingParameterNames())
+                                )
+
     # Only floating
     def getComponentFloatingParameterNames(self):
 
@@ -38,16 +46,13 @@ class Model(Distribution):
 
         for c in self.fitComponents.values():
 
-            if c.isFixed:
-                continue
-
-            names += list(map(lambda x : self.name + '-' + x, c.getParameterNames()))
+            names += list(map(lambda x : self.name + '-' + x, c.getFloatingParameterNames()))
 
         return names
 
     def getFloatingParameterNames(self):
 
-        names = getComponentFloatingParameterNames()
+        names = self.getComponentFloatingParameterNames()
 
         # Add yields from the model
         for y in self.fitYields.values():
@@ -55,7 +60,7 @@ class Model(Distribution):
             if y.isFixed:
                 continue
 
-            names += y.name
+            names.append(y.name)
 
         return names
 
@@ -67,7 +72,7 @@ class Model(Distribution):
             values.append(y.value)
 
         for c in self.fitComponents.values():
-            for v in c.getParameters():
+            for v in c.getParameters().values():
                 values.append(v.value)
 
         return values
@@ -140,19 +145,17 @@ class Model(Distribution):
         # Return initial parameters so that __call__ can be called initially with the correct number
         # and with the parameters in the correct order
 
-        return getFloatingParameterValues()
+        return self.getFloatingParameterValues()
 
-    def __call__(self, *params):
-
-        # used by iminuit (+ to determine parameters)
-
-        paramNames = self.getFloatingParameterNames()
+    def __call__(self, **params):
 
         if len(paramNames) != len(params):
             print('Number of parameters differs from the number of floating parameters of the model.')
             exit(1)
 
-        for i, param in enumerate(params):
-            self.parameters(paramNames[i]).updateValue(param)
+        # for i, param in enumerate(params):
+        #     self.parameters(paramNames[i]).updateValue(param)
+        #
+        # return self.lnprobVal(data)
 
-        return self.lnprobVal(data)
+        return np.sum(params)

@@ -23,6 +23,10 @@ import numpy as np
 
 from pprint import pprint
 
+from iminuit import Minuit
+
+from iminuit.util import describe
+
 import glasnost as gl
 
 data = np.linspace(-10, 10, 1000)
@@ -59,4 +63,10 @@ plt.plot(data, model.prob(data), lw = 1.0)
 plt.savefig('testModel.pdf')
 plt.clf()
 
+pprint(model.getFloatingParameterValues())
+
 pprint(gl.utils.scopesUsed)
+
+model.setData(data)
+
+minuit = Minuit(model)
