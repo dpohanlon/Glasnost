@@ -27,7 +27,10 @@ import glasnost as gl
 
 np.random.seed(42)
 
-data = np.concatenate((np.random.normal(-1., 4., 1000), np.random.normal(0., 1., 1000), np.random.normal(3., 1., 1000)))
+# data = np.concatenate((np.random.normal(-1., 4., 1000), np.random.normal(0., 1., 1000), np.random.normal(3., 1., 1000)))
+
+data = np.concatenate((np.random.normal(0., 1., 1000), np.random.normal(0., 3., 1000)))
+
 
 with gl.name_scope("massFit"):
 
@@ -36,40 +39,47 @@ with gl.name_scope("massFit"):
         m1 = gl.Parameter(0.1, name = 'mean')
         s1 = gl.Parameter(1.0, name = 'sigma')
 
-        y1 = gl.Parameter(len(data) // 3, name = 'yield')
+        y1 = gl.Parameter(len(data) // 2, name = 'yield')
 
         g1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
 
     with gl.name_scope("secondGaussian"):
 
-        m2 = gl.Parameter(3.0, name = 'mean')
-        s2 = gl.Parameter(1.0, name = 'sigma')
+        s2 = gl.Parameter(4.0, name = 'sigma')
 
-        y2 = gl.Parameter(len(data) // 3, name = 'yield')
+        y2 = gl.Parameter(len(data) // 2, name = 'yield')
 
-        g2 = gl.Gaussian({'mean' : m2, 'sigma' : s2})
+        g2 = gl.Gaussian({'mean' : m1, 'sigma' : s2})
 
-    with gl.name_scope("thirdGaussian"):
+    # with gl.name_scope("thirdGaussian"):
+    #
+    #     m3 = gl.Parameter(-1.0, name = 'mean')
+    #     s3 = gl.Parameter(5.0, name = 'sigma')
+    #
+    #     y3 = gl.Parameter(len(data) // 3, name = 'yield')
+    #
+    #     g3 = gl.Gaussian({'mean' : m3, 'sigma' : s3})
 
-        m3 = gl.Parameter(-1.0, name = 'mean')
-        s3 = gl.Parameter(5.0, name = 'sigma')
+    # initialFitYields = {g1.name : y1, g2.name : y2, g3.name : y3}
+    # initialFitComponents = {g1.name : g1, g2.name : g2, g3.name : g3}
+    #
+    # model = gl.Model(name = 'model', initialFitYields = initialFitYields,
+    #                                  initialFitComponents = initialFitComponents)
 
-        y3 = gl.Parameter(len(data) // 3, name = 'yield')
-
-        g3 = gl.Gaussian({'mean' : m3, 'sigma' : s3})
-
-    initialFitYields = {g1.name : y1, g2.name : y2, g3.name : y3}
-    initialFitComponents = {g1.name : g1, g2.name : g2, g3.name : g3}
+    initialFitYields = {g1.name : y1, g2.name : y2}
+    initialFitComponents = {g1.name : g1, g2.name : g2}
 
     model = gl.Model(name = 'model', initialFitYields = initialFitYields,
                                      initialFitComponents = initialFitComponents)
 
 fitter = gl.Fitter(model, backend = 'minuit')
 
-res = fitter.fit(data, verbose = False)
+res = fitter.fit(data, verbose = True)
 
 plotter = gl.Plotter(model, data)
-# plotter.plotDataModel(nDataBins = 50)
-plotter.plotDataModel()
+
+fig, ax = plotter.plotDataModel()
+ax.set_xlabel('The whats')
+ax.set_ylabel('How many things')
 
 plt.savefig('testPlot.pdf')

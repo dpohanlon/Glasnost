@@ -68,7 +68,7 @@ class Model(Distribution):
 
     def getFloatingParameterNames(self):
 
-        names = self.getComponentFloatingParameterNames()
+        names = list(set(self.getComponentFloatingParameterNames()))
 
         # Add yields from the model
         for y in self.fitYields.values():

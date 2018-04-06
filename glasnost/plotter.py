@@ -67,6 +67,8 @@ class Plotter(object):
 
         self.dataBinning = bins
 
+        fig, ax = (fig[0], fig[1]) if fig else (None, None)
+
         if not fig:
             fig = plt.figure(1)
             ax = fig.add_subplot(111)
@@ -83,14 +85,14 @@ class Plotter(object):
         plt.ylim(ymin = 0)
         plt.xlim(minVal, maxVal)
 
-        return fig
+        return fig, ax
 
     def plotModel(self, minVal = None, maxVal = None, fig = False, nSamples = 1000, **kwargs):
 
         minVal = minVal if minVal else np.min(self.data)
         maxVal = maxVal if maxVal else np.max(self.data)
 
-        binWidth = self.dataBinning[1] - self.dataBinning[0] if not self.dataBinning is None else None
+        binWidth = (self.dataBinning[1] - self.dataBinning[0]) if not self.dataBinning is None else None
 
         if not binWidth:
 
@@ -103,6 +105,8 @@ class Plotter(object):
             binWidth = 1.0
 
         x = np.linspace(minVal, maxVal, nSamples)
+
+        fig, ax = (fig[0], fig[1]) if fig else (None, None)
 
         if not fig:
             fig = plt.figure(1)
@@ -121,11 +125,11 @@ class Plotter(object):
         plt.ylim(ymin = 0)
         plt.xlim(minVal, maxVal)
 
-        return fig
+        return fig, ax
 
     def plotDataModel(self, **kwargs):
 
         fig = self.plotData(**kwargs)
-        fig = self.plotModel(**kwargs, fig = fig)
+        fig, ax = self.plotModel(**kwargs, fig = fig)
 
-        return fig
+        return fig, ax
