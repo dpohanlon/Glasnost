@@ -46,19 +46,28 @@ class Plotter(object):
         self.totalCurveConfig = {'lw' : 3.0, 'color' : sns.xkcd_rgb["denim blue"],
                                  'zorder' : 99}
 
-        self.dataBining = None
+        self.dataBinning = None
 
+    def guessNBins(self, minVal, maxVal):
+        # Using the Freedman-Diaconis rule
 
-    def plotData(self, nDataBins = None, minVal = None, maxVal = None, havefig = False):
+        iqr = np.percentile(self.data, 75) - np.percentile(self.data, 25)
+        width = 2. * iqr / np.cbrt(len(self.data))
+
+        nBins = int((maxVal - minVal) / width)
+
+        return nBins
+
+    def plotData(self, nDataBins = None, minVal = None, maxVal = None, fig = False, **kwargs):
 
         minVal = minVal if minVal else np.min(self.data)
         maxVal = maxVal if maxVal else np.max(self.data)
 
-        bins = np.linspace(minVal, maxVal, nDataBins if nDataBins else 100)
+        bins = np.linspace(minVal, maxVal, nDataBins if nDataBins else self.guessNBins(minVal, maxVal))
 
         self.dataBinning = bins
 
-        if not havefig:
+        if not fig:
             fig = plt.figure(1)
             ax = fig.add_subplot(111)
 
@@ -76,7 +85,7 @@ class Plotter(object):
 
         return fig
 
-    def plotModel(self, minVal = None, maxVal = None, fig = False, nSamples = 1000):
+    def plotModel(self, minVal = None, maxVal = None, fig = False, nSamples = 1000, **kwargs):
 
         minVal = minVal if minVal else np.min(self.data)
         maxVal = maxVal if maxVal else np.max(self.data)
@@ -107,6 +116,16 @@ class Plotter(object):
         # Normalised according to the data binning also plotted
         modelToPlot *= binWidth
 
-        plt.plot(x, modelToPlot, **self.totalCurveConfig)
+        plt.plot(x, modelToPlot, **self.totalCurveConfig, alpha = 0.9)
+
+        plt.ylim(ymin = 0)
+        plt.xlim(minVal, maxVal)
+
+        return fig
+
+    def plotDataModel(self, **kwargs):
+
+        fig = self.plotData(**kwargs)
+        fig = self.plotModel(**kwargs, fig = fig)
 
         return fig
