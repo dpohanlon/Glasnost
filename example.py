@@ -80,7 +80,10 @@ with gl.name_scope("massFit"):
 
 fitter = gl.Fitter(model, backend = 'minuit')
 
-res = fitter.fit(data, verbose = True)
+res = fitter.fit(data, verbose = False)
+
+plot = gl.Plotter(model, data).plotData(nDataBins = 50)
+plt.savefig('testPlot.pdf')
 
 # minuit.minos()
 # minuit.hesse()

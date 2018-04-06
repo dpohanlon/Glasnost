@@ -5,7 +5,11 @@ from iminuit import Minuit
 import sys
 
 class Fitter(object):
-    """docstring for [object Object]."""
+    """
+
+    Class that wraps the fitter backends and initialises the model in each case.
+
+    """
 
     def __init__(self, model, backend = 'minuit'):
 
@@ -19,7 +23,7 @@ class Fitter(object):
 
         self.backend = backend
 
-    def fit(self, data, verbose = False):
+    def fit(self, data, verbose = False, **kwargs):
 
         self.model.setData(data)
 
@@ -28,7 +32,7 @@ class Fitter(object):
         if self.backend in ['minuit', 'minuit-migrad-hesse', 'minos', 'minuit-minos']:
 
             # Initialise Minuit class from iminuit
-            minuit = Minuit(self.model, errordef = 1.0, **self.model.getInitialParameterValuesAndStepSizes())
+            minuit = Minuit(self.model, errordef = 1.0, **self.model.getInitialParameterValuesAndStepSizes(), **kwargs)
 
             stdout = sys.stdout
 
