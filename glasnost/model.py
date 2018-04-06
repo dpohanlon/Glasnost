@@ -63,6 +63,9 @@ class Model(Distribution):
 
         return names
 
+    def getTotalYield(self):
+        return np.sum(list(self.fitYields.values()))
+
     def getFloatingParameterNames(self):
 
         names = self.getComponentFloatingParameterNames()
@@ -131,7 +134,7 @@ class Model(Distribution):
         # With EML criteria
 
         nObs = len(data)
-        totalYield = np.sum(list(self.fitYields.values()))
+        totalYield = self.getTotalYield()
 
         return np.sum(self.lnprob(data)) + nObs * np.log(totalYield) - totalYield
 

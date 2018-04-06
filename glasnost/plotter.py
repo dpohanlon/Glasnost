@@ -35,25 +35,37 @@ class Plotter(object):
     # Probably will need to specify independent variable (like in RooFit)
 
     def __init__(self, model = None, data = None):
+
         self.model = model
         self.data = data
 
         self.errorbarConfig = {'capthick' : 1.0, 'capsize' : 0.0, 'barsabove' : True,
-                               'elinewidth' : 1.0, 'color' : 'k', 'markersize' : 6, 'fmt' : '.'}
+                               'elinewidth' : 1.0, 'color' : 'k', 'markersize' : 6,
+                               'fmt' : '.', 'zorder' : 100}
 
-    def plotData(self, nDataBins = None, minVal = None, maxVal = None):
+        self.totalCurveConfig = {'lw' : 3.0, 'color' : sns.xkcd_rgb["denim blue"],
+                                 'zorder' : 99}
+
+        self.dataBining = None
+
+
+    def plotData(self, nDataBins = None, minVal = None, maxVal = None, havefig = False):
 
         minVal = minVal if minVal else np.min(self.data)
         maxVal = maxVal if maxVal else np.max(self.data)
 
         bins = np.linspace(minVal, maxVal, nDataBins if nDataBins else 100)
 
-        fig = plt.figure(1)
-        ax = fig.add_subplot(111)
+        self.dataBinning = bins
+
+        if not havefig:
+            fig = plt.figure(1)
+            ax = fig.add_subplot(111)
 
         binnedData, b = np.histogram(self.data, bins = bins)
 
         binEdges = (b + 0.5 * (b[1] - b[0]))[:-1]
+
         dataXErrs = 0.5 * (b[1] - b[0])
         dataYErrs = np.sqrt(binnedData)
 
@@ -61,5 +73,40 @@ class Plotter(object):
 
         plt.ylim(ymin = 0)
         plt.xlim(minVal, maxVal)
+
+        return fig
+
+    def plotModel(self, minVal = None, maxVal = None, fig = False, nSamples = 1000):
+
+        minVal = minVal if minVal else np.min(self.data)
+        maxVal = maxVal if maxVal else np.max(self.data)
+
+        binWidth = self.dataBinning[1] - self.dataBinning[0] if not self.dataBinning is None else None
+
+        if not binWidth:
+
+            # If this is not a plot with data, then plot unnormalised, as it doesn't matter
+            # but warn that if this is, then the data should be plotted first
+
+            print('WARNING: No binning scheme is defined.')
+            print('If this is for a plot with data, run the data plot first.')
+
+            binWidth = 1.0
+
+        x = np.linspace(minVal, maxVal, nSamples)
+
+        if not fig:
+            fig = plt.figure(1)
+            ax = fig.add_subplot(111)
+
+        modelToPlot = self.model.prob(x)
+
+        # Normalise to total fitted yield
+        modelToPlot *= self.model.getTotalYield()
+
+        # Normalised according to the data binning also plotted
+        modelToPlot *= binWidth
+
+        plt.plot(x, modelToPlot, **self.totalCurveConfig)
 
         return fig
