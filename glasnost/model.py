@@ -169,19 +169,36 @@ class Model(Distribution):
         # Maybe one day set this more intelligently
 
         for k, v in self.getFloatingParameterValues().items():
-            out['error_' + k] = 0.1 * v
+            out['error_' + k] = abs(0.1 * v) if 'yield' not in k else abs(1. * v)
 
         return out
 
-    def __call__(self, **params):
+    # def __call__(self, **params):
+    #
+    #     # params is a dictionary of parameter names to floats (representing the initial configuration)
+    #
+    #     if self.getNFloatingParameters() != len(params):
+    #         print('Number of parameters differs from the number of floating parameters of the model.')
+    #         exit(1)
+    #
+    #     for n, v in params.items():
+    #         self.parameters[n].updateValue(v)
+    #
+    #     return self.lnprobVal(self.data)
 
-        # params is a dictionary of parameter names to floats (representing the initial configuration)
+    def __call__(self, *params):
+
+        # params is a tuple of parameter values according to the ordering given by getFloatingParameterNames()
 
         if self.getNFloatingParameters() != len(params):
             print('Number of parameters differs from the number of floating parameters of the model.')
             exit(1)
 
-        for n, v in params.items():
-            self.parameters[n].updateValue(v)
+        names = self.getFloatingParameterNames()
 
-        return self.lnprobVal(self.data)
+        # Check that this ordering will always be maintained - could be buggy
+
+        for i in range(len(names)):
+            self.parameters[names[i]].updateValue(params[i])
+
+        return -self.lnprobVal(self.data)

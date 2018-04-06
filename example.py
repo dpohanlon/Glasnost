@@ -29,8 +29,9 @@ from iminuit.util import describe
 
 import glasnost as gl
 
-# data = np.linspace(-10, 10, 1000)
-data = np.random.normal(0, 1, 1000)
+x = np.linspace(-3, 6, 1000)
+# data = np.concatenate((np.random.normal(0, 1, 100), np.random.normal(3, 1, 100)))
+data = np.random.normal(0, 1, 100)
 
 with gl.name_scope("massFit"):
 
@@ -39,16 +40,16 @@ with gl.name_scope("massFit"):
         m1 = gl.Parameter(0.1, name = 'mean')
         s1 = gl.Parameter(1.1, name = 'sigma')
 
-        y1 = gl.Parameter(900, name = 'yield')
+        y1 = gl.Parameter(90, name = 'yield')
 
         g1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
 
     # with gl.name_scope("secondGaussian"):
     #
-    #     m2 = gl.Parameter(2.0, name = 'mean')
-    #     s2 = gl.Parameter(2.0, name = 'sigma')
+    #     m2 = gl.Parameter(3.5, name = 'mean')
+    #     s2 = gl.Parameter(1.0, name = 'sigma')
     #
-    #     y2 = gl.Parameter(75, name = 'yield')
+    #     y2 = gl.Parameter(110, name = 'yield')
     #
     #     g2 = gl.Gaussian({'mean' : m2, 'sigma' : s2})
     #
@@ -80,3 +81,8 @@ model.setData(data)
 
 minuit = Minuit(model, errordef = 1.0, **model.getInitialParameterValuesAndStepSizes())
 minuit.migrad()
+
+# plt.hist(data, bins = 25, normed = True, histtype = 'stepfilled')
+plt.plot(x, model.prob(x), lw = 1.0)
+plt.savefig('fitModel.pdf')
+plt.clf()
