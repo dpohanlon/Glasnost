@@ -98,9 +98,6 @@ class Model(Distribution):
 
         # This assumes that the total likelihood is a sum over components
 
-        nObs = len(data)
-        totalYield = np.sum(list(self.fitYields.values()))
-
         # COPIES of dictionary values
         # In future: https://docs.python.org/2/library/stdtypes.html#dictionary-view-objects
         components = list(self.fitComponents.values())
@@ -116,6 +113,9 @@ class Model(Distribution):
 
         # Sum across component axis, vector of length nData
         p = np.sum(p, 0)
+
+        # normalise
+        p *= (1. / np.sum(yields))
 
         # Take log of each component, (sum over data axis to get total log-likelihood)
         p = np.log(p)
@@ -195,6 +195,8 @@ class Model(Distribution):
             exit(1)
 
         names = self.getFloatingParameterNames()
+
+        # print(self.parameters['massFit/coreGaussian/yield'])
 
         # Check that this ordering will always be maintained - could be buggy
 
