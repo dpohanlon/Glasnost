@@ -9,13 +9,15 @@ class name_scope(object):
     def __enter__(self):
         global nameScope
 
-        if self.name not in scopesUsed:
+        newScope = (nameScope + self.name + '/')
+
+        if newScope not in scopesUsed:
             scopesUsed.add(self.name)
         else:
-            print('Scope ' + self.name + ' already used!')
+            print('Scope ' + newScope + ' already used!')
             exit(1)
 
-        nameScope += self.name + '/'
+        nameScope = newScope
 
     def __exit__(self, type, value, traceback):
         global nameScope

@@ -20,7 +20,9 @@ rcParams['ytick.direction'] = 'in'
 rcParams.update({'figure.autolayout': True})
 
 from seaborn import apionly as sns
-colours = sns.light_palette((210, 90, 60), input="husl")
+# colours = sns.light_palette((210, 90, 60), input="husl")
+# colours = ['#ff3000', '#ff8f00', '#14b8b8']
+colours = sns.color_palette("Spectral", 5)
 
 import numpy as np
 
@@ -43,8 +45,10 @@ class Plotter(object):
                                'elinewidth' : 1.0, 'color' : 'k', 'markersize' : 6,
                                'fmt' : '.', 'zorder' : 100}
 
-        self.totalCurveConfig = {'lw' : 3.0, 'color' : sns.xkcd_rgb["denim blue"],
+        self.totalCurveConfig = {'lw' : 3.0, 'color' : sns.xkcd_rgb["steel blue"],
                                  'zorder' : 99}
+
+        self.componentCurveConfig = {'lw' : 2.0, 'zorder' : 98, 'ls' : '--'}
 
         self.dataBinning = None
 
@@ -58,7 +62,7 @@ class Plotter(object):
 
         return nBins
 
-    def plotData(self, nDataBins = None, minVal = None, maxVal = None, fig = False, **kwargs):
+    def plotData(self, nDataBins = None, minVal = None, maxVal = None, fig = False, ax = None, **kwargs):
 
         minVal = minVal if minVal else np.min(self.data)
         maxVal = maxVal if maxVal else np.max(self.data)
@@ -67,12 +71,6 @@ class Plotter(object):
 
         self.dataBinning = bins
 
-        fig, ax = (fig[0], fig[1]) if fig else (None, None)
-
-        if not fig:
-            fig = plt.figure(1)
-            ax = fig.add_subplot(111)
-
         binnedData, b = np.histogram(self.data, bins = bins)
 
         binEdges = (b + 0.5 * (b[1] - b[0]))[:-1]
@@ -80,14 +78,18 @@ class Plotter(object):
         dataXErrs = 0.5 * (b[1] - b[0])
         dataYErrs = np.sqrt(binnedData)
 
-        plt.errorbar(binEdges, binnedData, xerr = dataXErrs, yerr = dataYErrs, **self.errorbarConfig)
+        f = plt
+        if ax:
+            f = ax
+
+        f.errorbar(binEdges, binnedData, xerr = dataXErrs, yerr = dataYErrs, **self.errorbarConfig)
 
         plt.ylim(ymin = 0)
         plt.xlim(minVal, maxVal)
 
-        return fig, ax
+        return
 
-    def plotModel(self, minVal = None, maxVal = None, fig = False, nSamples = 1000, **kwargs):
+    def plotModel(self, minVal = None, maxVal = None, fig = False, nSamples = 1000, ax = None, **kwargs):
 
         minVal = minVal if minVal else np.min(self.data)
         maxVal = maxVal if maxVal else np.max(self.data)
@@ -106,11 +108,9 @@ class Plotter(object):
 
         x = np.linspace(minVal, maxVal, nSamples)
 
-        fig, ax = (fig[0], fig[1]) if fig else (None, None)
-
-        if not fig:
-            fig = plt.figure(1)
-            ax = fig.add_subplot(111)
+        f = plt
+        if ax:
+            f = ax
 
         modelToPlot = self.model.prob(x)
 
@@ -120,16 +120,28 @@ class Plotter(object):
         # Normalised according to the data binning also plotted
         modelToPlot *= binWidth
 
-        plt.plot(x, modelToPlot, **self.totalCurveConfig, alpha = 0.9)
+        f.plot(x, modelToPlot, **self.totalCurveConfig)
+
+        # Components
+
+        # yields = list(self.model.fitYields.values())
+        # for i, c in enumerate(self.model.fitComponents.values()):
+        #     plt.plot(x, c.prob(x) * yields[i] * binWidth, **self.componentCurveConfig, color = colours[i])
+        #
+        # return fig, ax
+
+        yields = list(self.model.fitYields.values())[1:]
+        for i, c in enumerate(list(self.model.fitComponents.values())[1:]):
+            f.fill_between(x, 0, c.prob(x) * yields[i] * binWidth, color = colours[i])
 
         plt.ylim(ymin = 0)
         plt.xlim(minVal, maxVal)
 
-        return fig, ax
+        return
 
     def plotDataModel(self, **kwargs):
 
-        fig = self.plotData(**kwargs)
-        fig, ax = self.plotModel(**kwargs, fig = fig)
+        self.plotData(**kwargs)
+        self.plotModel(**kwargs)
 
-        return fig, ax
+        return

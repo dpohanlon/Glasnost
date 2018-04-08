@@ -29,57 +29,83 @@ np.random.seed(42)
 
 # data = np.concatenate((np.random.normal(-1., 4., 1000), np.random.normal(0., 1., 1000), np.random.normal(3., 1., 1000)))
 
-data = np.concatenate((np.random.normal(0., 1., 1000), np.random.normal(0., 3., 1000)))
+data1 = np.concatenate((np.random.normal(0., 1., 1000), np.random.normal(0., 3., 1000)))
+data2 = np.concatenate((np.random.normal(0., 1., 500), np.random.normal(0., 3., 500)))
 
+with gl.name_scope('massFit'):
 
-with gl.name_scope("massFit"):
+    with gl.name_scope("model1"):
 
-    with gl.name_scope("coreGaussian"):
+        with gl.name_scope("firstGaussian"):
 
-        m1 = gl.Parameter(0.1, name = 'mean')
-        s1 = gl.Parameter(1.0, name = 'sigma')
+            m1 = gl.Parameter(0.2, name = 'mean')
+            s1 = gl.Parameter(1.1, name = 'sigma')
 
-        y1 = gl.Parameter(len(data) // 2, name = 'yield')
+            y1 = gl.Parameter(len(data1) // 2 + 100, name = 'yield')
 
-        g1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
+            g1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
 
-    with gl.name_scope("secondGaussian"):
+        with gl.name_scope("secondGaussian"):
 
-        s2 = gl.Parameter(4.0, name = 'sigma')
+            s2 = gl.Parameter(5.1, name = 'sigma')
 
-        y2 = gl.Parameter(len(data) // 2, name = 'yield')
+            y2 = gl.Parameter(len(data1) // 2 + 100, name = 'yield')
 
-        g2 = gl.Gaussian({'mean' : m1, 'sigma' : s2})
+            g2 = gl.Gaussian({'mean' : m1, 'sigma' : s2})
 
-    # with gl.name_scope("thirdGaussian"):
-    #
-    #     m3 = gl.Parameter(-1.0, name = 'mean')
-    #     s3 = gl.Parameter(5.0, name = 'sigma')
-    #
-    #     y3 = gl.Parameter(len(data) // 3, name = 'yield')
-    #
-    #     g3 = gl.Gaussian({'mean' : m3, 'sigma' : s3})
+        initialFitYields1 = {g1.name : y1, g2.name : y2}
+        initialFitComponents1 = {g1.name : g1, g2.name : g2}
 
-    # initialFitYields = {g1.name : y1, g2.name : y2, g3.name : y3}
-    # initialFitComponents = {g1.name : g1, g2.name : g2, g3.name : g3}
-    #
-    # model = gl.Model(name = 'model', initialFitYields = initialFitYields,
-    #                                  initialFitComponents = initialFitComponents)
+        model1 = gl.Model(initialFitYields = initialFitYields1, initialFitComponents = initialFitComponents1)
 
-    initialFitYields = {g1.name : y1, g2.name : y2}
-    initialFitComponents = {g1.name : g1, g2.name : g2}
+    with gl.name_scope("model2"):
 
-    model = gl.Model(name = 'model', initialFitYields = initialFitYields,
-                                     initialFitComponents = initialFitComponents)
+        with gl.name_scope("firstGaussian"):
+
+            y3 = gl.Parameter(len(data2) // 2 + 100, name = 'yield')
+
+        with gl.name_scope("secondGaussian"):
+
+            y4 = gl.Parameter(len(data2) // 2 + 100, name = 'yield')
+
+        initialFitYields2 = {g1.name : y3, g2.name : y4}
+
+        model2 = gl.Model(initialFitYields = initialFitYields2, initialFitComponents = initialFitComponents1)
+
+    models = {model1.name : model1, model2.name : model2}
+
+    model = gl.Model(initialFitComponents = models, simultaneous = True)
 
 fitter = gl.Fitter(model, backend = 'minuit')
 
-res = fitter.fit(data, verbose = True)
+res = fitter.fit([data1, data2], verbose = True)
 
-plotter = gl.Plotter(model, data)
+#
 
-fig, ax = plotter.plotDataModel()
-ax.set_xlabel('The whats')
-ax.set_ylabel('How many things')
+# f, axarr = plt.subplots(2, sharey = True)
 
-plt.savefig('testPlot.pdf')
+f, axarr = plt.subplots(1, 2, sharey = True)
+
+plotter = gl.Plotter(model1, data1)
+plotter.plotDataModel(ax = axarr[0])
+
+axarr[0].set_xlabel('The things')
+axarr[0].set_ylabel('How many things')
+
+plt.xlim(np.min(data1), np.max(data1))
+
+# ax.set_yscale("log", nonposy='clip')
+# ax.set_ylim(1)
+
+plotter = gl.Plotter(model2, data2)
+plotter.plotDataModel(ax = axarr[1])
+
+axarr[1].set_xlabel('The things')
+# axarr[1].set_ylabel('How many things')
+
+plt.xlim(np.min(data2), np.max(data2))
+
+# ax.set_yscale("log", nonposy='clip')
+# ax.set_ylim(1)
+
+plt.savefig('testPlot.pdf', bbox_inches = 'tight')
