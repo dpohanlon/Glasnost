@@ -19,8 +19,8 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
         self.initialValue = initialValue
         self.value_ = self.initialValue
 
-        self.min = minVal if minVal else self.initialValue - 3. * self.initialValue
-        self.max = maxVal if maxVal else self.initialValue + 3. * self.initialValue
+        self.min = minVal if minVal is not None else self.initialValue - 3. * self.initialValue
+        self.max = maxVal if maxVal is not None else self.initialValue + 3. * self.initialValue
 
         self.priorDistribution = priorDistribution
 

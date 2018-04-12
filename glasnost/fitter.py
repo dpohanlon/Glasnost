@@ -25,6 +25,8 @@ class Fitter(object):
 
     def fit(self, data, verbose = False, **kwargs):
 
+        print(self.model.getInitialParameterValuesAndStepSizes())
+
         self.model.setData(data)
 
         minimiser = None

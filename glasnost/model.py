@@ -4,6 +4,8 @@ from iminuit.util import Struct
 
 import numpy as np
 
+from collections import OrderedDict
+
 class Model(Distribution):
 
     """
@@ -73,24 +75,22 @@ class Model(Distribution):
 
     def getFloatingParameterNames(self):
 
-        names = list(set(self.getComponentFloatingParameterNames()))
+        names = set(self.getComponentFloatingParameterNames())
 
         if self.fitYields:
             # Add yields from the model
             for y in self.fitYields.values():
+                if not y.isFixed:
+                    names.add(y.name)
 
-                if y.isFixed:
-                    continue
-
-                names.append(y.name)
-
-        return names
+        return sorted(list(names))
 
     def getFloatingParameterValues(self):
 
         values = {}
 
-        if self.fitYields:
+        # If we're simultaneous, we have no parameters here
+        if self.fitYields and not self.simultaneous:
             for y in self.fitYields.values():
                 values[y.name] = y.value
 
@@ -99,6 +99,20 @@ class Model(Distribution):
                 values[v.name] = v.value
 
         return values
+
+    def parameterRangeLnPriors(self):
+
+        # Fill prior for ranges, doesn't depend on data
+
+        if any([y.value_ > y.max or y.value_ < y.min for y in self.fitYields.values()]):
+            return -np.inf
+
+        # Use np.zeros(1) as dummy data -> won't be used anyway if it's inf (which is true for
+        # parameter range priors)
+        if any([np.isinf(c.lnprior(np.zeros(1))) for c in self.fitComponents.values()]):
+            return -np.inf
+
+        return 0
 
     def prob(self, data):
 
@@ -119,7 +133,13 @@ class Model(Distribution):
         # If no yields are given, assume that all are weighted equally (for example if the components
         # are each individual models for a particular dataset)
 
-        yields = list([y.value_ for y in self.fitYields.values()]) if self.fitYields else [1. for i in range(len(components))]
+        # yields = list([y.value_ for y in self.fitYields.values()]) if self.fitYields else [1. for i in range(len(components))]
+
+        yields = None
+        if self.fitYields:
+            yields = {n : y.value_ for n, y in self.fitYields.items()}
+        else:
+            yields = {c.name : 1.0 for c in self.fitComponents.values()}
 
         # If simultaneous, get probVal to avoid having mismatched data lengths (for each dataset),
         # we don't need the prob except for minimisation
@@ -129,11 +149,11 @@ class Model(Distribution):
             # Already lnProb - just sum these to get the total likelihood
 
             z = np.vstack([ components[i].lnprobVal(data[i]) for i in range(len(components)) ])
-
             return np.sum(z)
 
         else:
-            z = [ yields[i] * components[i].prob(data) for i in range(len(components)) ]
+            # z = [ yields[i] * components[i].prob(data) for i in range(len(components)) ]
+            z = [ yields[component.name] * component.prob(data) for component in components ]
 
             # Matrix of (nComponents, nData) -> uses lots of memory, rewrite using einsum?
             p = np.vstack(z)
@@ -142,7 +162,8 @@ class Model(Distribution):
             p = np.sum(p, 0)
 
             # normalise
-            p *= (1. / np.sum(yields))
+            # p *= (1. / np.sum(yields))
+            p *= (1. / np.sum(list(yields.values())))
 
             # Take log of each component, (sum over data axis to get total log-likelihood)
             p = np.log(p)
@@ -164,7 +185,17 @@ class Model(Distribution):
         nObs = len(data)
         totalYield = self.getTotalYield()
 
-        return np.sum(self.lnprob(data)) + nObs * np.log(totalYield) - totalYield
+        lnPriors = self.parameterRangeLnPriors()
+
+        # Short circuit to avoid returning nan
+        if np.isinf(lnPriors):
+            return -np.inf
+
+        lnP = np.sum(self.lnprob(data) + self.lnprior(data)) + nObs * np.log(totalYield) - totalYield
+
+        lnP += self.parameterRangeLnPriors()
+
+        return lnP
 
     def setData(self, data):
 
@@ -192,15 +223,20 @@ class Model(Distribution):
         # Return initial parameters so that __call__ can be called initially with the correct number
         # and with the parameters in the correct order
 
-        return self.getFloatingParameterValues()
+        params = self.getFloatingParameterValues()
+
+        return params
 
     def getInitialParameterValuesAndStepSizes(self):
+
         out = self.getFloatingParameterValues()
 
         # Maybe one day set this more intelligently
 
         for k, v in self.getFloatingParameterValues().items():
-            out['error_' + k] = abs(0.1 * v) if 'yield' not in k else abs(1. * v)
+            out['error_' + k] = abs(0.1 * v) if 'yield' not in k else abs(1.)
+
+        out = OrderedDict(sorted(out.items(), key = lambda x : x[0]))
 
         return out
 
@@ -213,12 +249,10 @@ class Model(Distribution):
             exit(1)
 
         names = self.getFloatingParameterNames()
-
-        # print(self.parameters['massFit/coreGaussian/yield'])
-
+        # print(names)
         # Check that this ordering will always be maintained - could be buggy
 
-        for i in range(len(names)):
+        for i, n in enumerate(names):
             self.parameters[names[i]].updateValue(params[i])
 
         return -self.lnprobVal(self.data)

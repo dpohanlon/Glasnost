@@ -12,6 +12,8 @@ import matplotlib.ticker as plticker
 
 from matplotlib import cm
 
+from collections import OrderedDict
+
 rcParams['axes.facecolor'] = 'FFFFFF'
 rcParams['savefig.facecolor'] = 'FFFFFF'
 rcParams['xtick.direction'] = 'in'
@@ -34,22 +36,23 @@ data2 = np.concatenate((np.random.normal(0., 1., 500), np.random.normal(0., 3., 
 
 with gl.name_scope('massFit'):
 
+    m1 = gl.Parameter(0.2, name = 'mean')
+
     with gl.name_scope("model1"):
 
         with gl.name_scope("firstGaussian"):
 
-            m1 = gl.Parameter(0.2, name = 'mean')
-            s1 = gl.Parameter(1.1, name = 'sigma')
+            s1 = gl.Parameter(1.0, name = 'sigma')
 
-            y1 = gl.Parameter(len(data1) // 2 + 100, name = 'yield')
+            y1 = gl.Parameter(len(data2) // 2, name = 'yield', minVal = 0)
 
             g1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
 
         with gl.name_scope("secondGaussian"):
 
-            s2 = gl.Parameter(5.1, name = 'sigma')
+            s2 = gl.Parameter(3.0, name = 'sigma')
 
-            y2 = gl.Parameter(len(data1) // 2 + 100, name = 'yield')
+            y2 = gl.Parameter(len(data2) // 2, name = 'yield', minVal = 0)
 
             g2 = gl.Gaussian({'mean' : m1, 'sigma' : s2})
 
@@ -62,11 +65,11 @@ with gl.name_scope('massFit'):
 
         with gl.name_scope("firstGaussian"):
 
-            y3 = gl.Parameter(len(data2) // 2 + 100, name = 'yield')
+            y3 = gl.Parameter(len(data1) // 2, name = 'yield', minVal = 0)
 
         with gl.name_scope("secondGaussian"):
 
-            y4 = gl.Parameter(len(data2) // 2 + 100, name = 'yield')
+            y4 = gl.Parameter(len(data1) // 2, name = 'yield', minVal = 0)
 
         initialFitYields2 = {g1.name : y3, g2.name : y4}
 
@@ -74,15 +77,16 @@ with gl.name_scope('massFit'):
 
     models = {model1.name : model1, model2.name : model2}
 
-    model = gl.Model(initialFitComponents = models, simultaneous = True)
+    model = gl.Model(initialFitComponents = OrderedDict([(model1.name , model1), (model2.name , model2)]), simultaneous = True)
+
+print(model.lnprobVal([data1, data2]))
 
 fitter = gl.Fitter(model, backend = 'minuit')
 
-res = fitter.fit([data1, data2], verbose = True)
+res = fitter.fit([data1, data2], verbose = False)
+print(res.edm)
 
 #
-
-# f, axarr = plt.subplots(2, sharey = True)
 
 f, axarr = plt.subplots(1, 2, sharey = True)
 
@@ -94,18 +98,17 @@ axarr[0].set_ylabel('How many things')
 
 plt.xlim(np.min(data1), np.max(data1))
 
-# ax.set_yscale("log", nonposy='clip')
-# ax.set_ylim(1)
+axarr[0].set_yscale("log", nonposy='clip')
+axarr[0].set_ylim(1)
 
 plotter = gl.Plotter(model2, data2)
 plotter.plotDataModel(ax = axarr[1])
 
 axarr[1].set_xlabel('The things')
-# axarr[1].set_ylabel('How many things')
 
 plt.xlim(np.min(data2), np.max(data2))
 
-# ax.set_yscale("log", nonposy='clip')
-# ax.set_ylim(1)
+axarr[1].set_yscale("log", nonposy='clip')
+axarr[1].set_ylim(1)
 
 plt.savefig('testPlot.pdf', bbox_inches = 'tight')
