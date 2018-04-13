@@ -27,6 +27,8 @@ from pprint import pprint
 
 import glasnost as gl
 
+import corner
+
 np.random.seed(42)
 
 # data = np.concatenate((np.random.normal(-1., 4., 1000), np.random.normal(0., 1., 1000), np.random.normal(3., 1., 1000)))
@@ -44,7 +46,7 @@ with gl.name_scope('massFit'):
 
             s1 = gl.Parameter(1.0, name = 'sigma')
 
-            y1 = gl.Parameter(len(data2) // 2, name = 'yield', minVal = 0)
+            y1 = gl.Parameter(len(data1) // 2, name = 'yield', minVal = 0)
 
             g1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
 
@@ -52,7 +54,7 @@ with gl.name_scope('massFit'):
 
             s2 = gl.Parameter(3.0, name = 'sigma')
 
-            y2 = gl.Parameter(len(data2) // 2, name = 'yield', minVal = 0)
+            y2 = gl.Parameter(len(data1) // 2, name = 'yield', minVal = 0)
 
             g2 = gl.Gaussian({'mean' : m1, 'sigma' : s2})
 
@@ -65,11 +67,11 @@ with gl.name_scope('massFit'):
 
         with gl.name_scope("firstGaussian"):
 
-            y3 = gl.Parameter(len(data1) // 2, name = 'yield', minVal = 0)
+            y3 = gl.Parameter(len(data2) // 2, name = 'yield', minVal = 0)
 
         with gl.name_scope("secondGaussian"):
 
-            y4 = gl.Parameter(len(data1) // 2, name = 'yield', minVal = 0)
+            y4 = gl.Parameter(len(data2) // 2, name = 'yield', minVal = 0)
 
         initialFitYields2 = {g1.name : y3, g2.name : y4}
 
@@ -79,11 +81,33 @@ with gl.name_scope('massFit'):
 
     model = gl.SimultaneousModel(initialFitComponents = [model1, model2])
 
-# print(model.lnprobVal([data1, data2]))
-
-fitter = gl.Fitter(model, backend = 'minuit')
+fitter = gl.Fitter(model, backend = 'emcee')
 
 res = fitter.fit([data1, data2], verbose = True)
+
+print(res.acceptance_fraction)
+
+samples = res.chain[:, 100:, :].reshape((-1, 7))
+
+means = np.mean(samples, axis = 0)
+stds = np.std(samples, axis = 0)
+
+pprint(means)
+
+pprint(stds)
+
+for i in range(7):
+
+    plt.plot(samples[:,i], lw = 2.0)
+    plt.savefig('samples' + str(i) + '.pdf')
+    plt.clf()
+
+    plt.hist(samples[:,i], bins = 50)
+    plt.savefig('samplesHist' + str(i) + '.pdf')
+    plt.clf()
+
+c = corner.corner(samples, truths = [0.0, 1.0, 1000., 3.0, 1000., 500., 500.])
+c.savefig('corner.pdf')
 
 #
 

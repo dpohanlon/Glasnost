@@ -44,14 +44,14 @@ class Model(Distribution):
 
         self.data = data
 
-        floatingParameterNames = self.getFloatingParameterNames()
+        self.floatingParameterNames = self.getFloatingParameterNames()
 
         # For iminuit's parameter introspection
         # Gets screwed up if parameters are changed between fixed and floating
         # Make sure this is propagated (somehow?)
 
-        self.func_code = Struct(co_varnames = floatingParameterNames,
-                                co_argcount = len(floatingParameterNames)
+        self.func_code = Struct(co_varnames = self.floatingParameterNames,
+                                co_argcount = len(self.floatingParameterNames)
                                 )
 
     # Only floating
@@ -220,12 +220,29 @@ class Model(Distribution):
 
         return out
 
+    def logL(self, params): # for emcee
+
+        # params is a tuple of parameter values according to the ordering given by getFloatingParameterNames()
+
+        if self.getNFloatingParameters() != len(params):
+            print('Number of parameters passed (%s) differs from the number of floating parameters of the model (%s).' %(len(params), self.getNFloatingParameters()))
+            exit(1)
+
+        names = self.floatingParameterNames
+
+        # Check that this ordering will always be maintained - could be buggy
+
+        for i, n in enumerate(names):
+            self.parameters[n].updateValue(params[i])
+
+        return self.lnprobVal(self.data)
+
     def __call__(self, *params):
 
         # params is a tuple of parameter values according to the ordering given by getFloatingParameterNames()
 
         if self.getNFloatingParameters() != len(params):
-            print('Number of parameters differs from the number of floating parameters of the model.')
+            print('Number of parameters passed (%s) differs from the number of floating parameters of the model (%s).' %(len(params), self.getNFloatingParameters()))
             exit(1)
 
         names = self.getFloatingParameterNames()

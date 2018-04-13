@@ -1,6 +1,10 @@
 import numpy as np
 
+np.random.seed(42)
+
 from iminuit import Minuit
+
+import emcee
 
 import sys
 
@@ -13,7 +17,11 @@ class Fitter(object):
 
     def __init__(self, model, backend = 'minuit'):
 
-        self.validBackends = ['minuit', 'minos', 'minuit-migrad-hesse', 'minuit-migrad-minos-hesse']
+        self.validBackends = ['minuit',
+                              'minos',
+                              'minuit-migrad-hesse',
+                              'minuit-migrad-minos-hesse',
+                              'emcee']
 
         self.model = model
 
@@ -24,8 +32,6 @@ class Fitter(object):
         self.backend = backend
 
     def fit(self, data, verbose = False, **kwargs):
-
-        print(self.model.getInitialParameterValuesAndStepSizes())
 
         self.model.setData(data)
 
@@ -56,5 +62,19 @@ class Fitter(object):
             sys.stdout = stdout
 
             minimiser = minuit
+
+        if self.backend in ['emcee']:
+
+            nwalkers = 50
+
+            params = self.model.floatingParameterNames
+            initParams = np.array([self.model.parameters[p].value_ for p in params])
+            ndim = len(initParams)
+
+            ipos = [initParams + 1e-4 * np.random.randn(ndim) for i in range(nwalkers)]
+
+            minimiser = emcee.EnsembleSampler(nwalkers, ndim, self.model.logL, threads = 1)
+
+            minimiser.run_mcmc(ipos, 10000)
 
         return minimiser

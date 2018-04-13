@@ -3,7 +3,12 @@ import numpy as np
 from glasnost.model import Model
 
 class SimultaneousModel(Model):
-    """docstring for [object Object]."""
+    """
+
+    Class derived from the Model class to provide functionality for simultaneous models, that are treated
+    as the sum over all log-likelihoods constructed from (model, data) pairs.
+
+    """
 
     def __init__(self, initialFitComponents, data = None, name = ''):
 
@@ -11,6 +16,7 @@ class SimultaneousModel(Model):
 
         # Don't pass fitComponents - not a dict
         # Init after setting fitComponentsSimultaneous, as init calls this method
+        # These should really derive from a single Model class
         super(SimultaneousModel, self).__init__(name = name, data = data)
 
         self.parameters = {}
