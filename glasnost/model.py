@@ -17,17 +17,12 @@ class Model(Distribution):
 
     """
 
-    def __init__(self, initialFitYields = None, initialFitComponents = None, data = None, simultaneous = False, name = ''):
+    def __init__(self, initialFitYields = {}, initialFitComponents = {}, data = None, name = ''):
 
         super(Model, self).__init__(name)
 
         # Dictionary of distribution names to yield Parameters
         self.fitYields = initialFitYields
-
-        # If this is a model for a simultaneous fit to multiple datasets - in that case data is expected to be a list
-        # of datasets, and in conjunction with 'initialFitYields = None' so that each model is equally weighted in the
-        # log-likelihood
-        self.simultaneous = simultaneous
 
         # Dictionary of distribution names to distributions
         self.fitComponents = initialFitComponents
@@ -89,8 +84,7 @@ class Model(Distribution):
 
         values = {}
 
-        # If we're simultaneous, we have no parameters here
-        if self.fitYields and not self.simultaneous:
+        if self.fitYields:
             for y in self.fitYields.values():
                 values[y.name] = y.value
 
@@ -141,44 +135,29 @@ class Model(Distribution):
         else:
             yields = {c.name : 1.0 for c in self.fitComponents.values()}
 
-        # If simultaneous, get probVal to avoid having mismatched data lengths (for each dataset),
-        # we don't need the prob except for minimisation
+        # z = [ yields[i] * components[i].prob(data) for i in range(len(components)) ]
+        z = [ yields[component.name] * component.prob(data) for component in components ]
 
-        if self.simultaneous:
+        # Matrix of (nComponents, nData) -> uses lots of memory, rewrite using einsum?
+        p = np.vstack(z)
 
-            # Already lnProb - just sum these to get the total likelihood
+        # Sum across component axis, vector of length nData
+        p = np.sum(p, 0)
 
-            z = np.vstack([ components[i].lnprobVal(data[i]) for i in range(len(components)) ])
-            return np.sum(z)
+        # normalise
+        # p *= (1. / np.sum(yields))
+        p *= (1. / np.sum(list(yields.values())))
 
-        else:
-            # z = [ yields[i] * components[i].prob(data) for i in range(len(components)) ]
-            z = [ yields[component.name] * component.prob(data) for component in components ]
+        # Take log of each component, (sum over data axis to get total log-likelihood)
+        p = np.log(p)
 
-            # Matrix of (nComponents, nData) -> uses lots of memory, rewrite using einsum?
-            p = np.vstack(z)
-
-            # Sum across component axis, vector of length nData
-            p = np.sum(p, 0)
-
-            # normalise
-            # p *= (1. / np.sum(yields))
-            p *= (1. / np.sum(list(yields.values())))
-
-            # Take log of each component, (sum over data axis to get total log-likelihood)
-            p = np.log(p)
-
-            return p
+        return p
 
     def probVal(self, data):
 
         return np.exp(self.lnprobVal(data))
 
     def lnprobVal(self, data):
-
-        if self.simultaneous:
-            # No EML
-            return self.lnprob(data)
 
         # With EML criteria
 
@@ -236,6 +215,7 @@ class Model(Distribution):
         for k, v in self.getFloatingParameterValues().items():
             out['error_' + k] = abs(0.1 * v) if 'yield' not in k else abs(1.)
 
+        # Might be slow - try another way
         out = OrderedDict(sorted(out.items(), key = lambda x : x[0]))
 
         return out
@@ -249,7 +229,7 @@ class Model(Distribution):
             exit(1)
 
         names = self.getFloatingParameterNames()
-        # print(names)
+
         # Check that this ordering will always be maintained - could be buggy
 
         for i, n in enumerate(names):

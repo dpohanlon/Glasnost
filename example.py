@@ -77,14 +77,13 @@ with gl.name_scope('massFit'):
 
     models = {model1.name : model1, model2.name : model2}
 
-    model = gl.Model(initialFitComponents = OrderedDict([(model1.name , model1), (model2.name , model2)]), simultaneous = True)
+    model = gl.SimultaneousModel(initialFitComponents = [model1, model2])
 
-print(model.lnprobVal([data1, data2]))
+# print(model.lnprobVal([data1, data2]))
 
 fitter = gl.Fitter(model, backend = 'minuit')
 
-res = fitter.fit([data1, data2], verbose = False)
-print(res.edm)
+res = fitter.fit([data1, data2], verbose = True)
 
 #
 
@@ -98,8 +97,8 @@ axarr[0].set_ylabel('How many things')
 
 plt.xlim(np.min(data1), np.max(data1))
 
-axarr[0].set_yscale("log", nonposy='clip')
-axarr[0].set_ylim(1)
+# axarr[0].set_yscale("log", nonposy='clip')
+# axarr[0].set_ylim(1)
 
 plotter = gl.Plotter(model2, data2)
 plotter.plotDataModel(ax = axarr[1])
@@ -108,7 +107,7 @@ axarr[1].set_xlabel('The things')
 
 plt.xlim(np.min(data2), np.max(data2))
 
-axarr[1].set_yscale("log", nonposy='clip')
-axarr[1].set_ylim(1)
+# axarr[1].set_yscale("log", nonposy='clip')
+# axarr[1].set_ylim(1)
 
 plt.savefig('testPlot.pdf', bbox_inches = 'tight')
