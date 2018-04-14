@@ -87,7 +87,7 @@ res = fitter.fit([data1, data2], verbose = True)
 
 print(res.acceptance_fraction)
 
-samples = res.chain[:, 100:, :].reshape((-1, 7))
+samples = res.chain[:, 200:, :].reshape((-1, 7))
 
 means = np.mean(samples, axis = 0)
 stds = np.std(samples, axis = 0)
@@ -99,17 +99,15 @@ pprint(stds)
 for i in range(7):
 
     plt.plot(samples[:,i], lw = 2.0)
-    plt.savefig('samples' + str(i) + '.pdf')
+    plt.savefig('samples' + str(i) + '.png')
     plt.clf()
 
     plt.hist(samples[:,i], bins = 50)
-    plt.savefig('samplesHist' + str(i) + '.pdf')
+    plt.savefig('samplesHist' + str(i) + '.png')
     plt.clf()
 
 c = corner.corner(samples, truths = [0.0, 1.0, 1000., 3.0, 1000., 500., 500.])
 c.savefig('corner.pdf')
-
-#
 
 f, axarr = plt.subplots(1, 2, sharey = True)
 

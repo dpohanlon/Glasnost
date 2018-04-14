@@ -65,7 +65,7 @@ class Fitter(object):
 
         if self.backend in ['emcee']:
 
-            nwalkers = 50
+            nwalkers = 100
 
             params = self.model.floatingParameterNames
             initParams = np.array([self.model.parameters[p].value_ for p in params])
@@ -75,6 +75,6 @@ class Fitter(object):
 
             minimiser = emcee.EnsembleSampler(nwalkers, ndim, self.model.logL, threads = 1)
 
-            minimiser.run_mcmc(ipos, 10000)
+            minimiser.run_mcmc(ipos, 1000)
 
         return minimiser

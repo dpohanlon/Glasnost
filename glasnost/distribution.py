@@ -2,6 +2,8 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
+from scipy.special import erf
+
 import glasnost as gl
 
 class Distribution(object):
@@ -51,6 +53,11 @@ class Distribution(object):
     def lnprob(self, data):
 
         pass
+
+    @abstractmethod
+    def sample(self, nEvents):
+
+        print('Sample not implemented for %s!' %(self.name))
 
     def hasDefaultPrior(self):
 
@@ -149,6 +156,183 @@ class Gaussian(Distribution):
     def hasDefaultPrior(self):
 
         return True
+
+    def sample(self, nEvents):
+        return np.random.normal(self.mean, self.sigma, size = nEvents) # Hehehe
+
+    def prior(self, data):
+
+        p = 1.0 if self.sigma > 0.0 else 0.0
+
+        return p * np.ones(data.shape)
+
+    def lnprior(self, data):
+
+        p = 0.0 if self.sigma > 0.0 else -np.inf
+
+        return p * np.ones(data.shape)
+
+class Uniform(Distribution):
+
+    """
+
+    Uniform distribution defined in the range [min, max]. No floating parameters.
+
+    """
+
+    # Takes dictionary of Parameters with name mean and sigma
+    def __init__(self, parameters = None, name = 'uniform'):
+
+        super(Uniform, self).__init__(parameters, name)
+
+        # Names correspond to input parameter dictionary
+
+        self.minParamName = 'min'
+        self.maxParamName = 'max'
+
+        # Names of actual parameter objects
+        self.paramNames = [p.name for p in self.parameters.values()]
+
+        # Check that params are fixed
+
+        for p in self.parameters.values():
+            if not p.isFixed:
+                self.fixed_ = True
+
+    @property
+    def min(self):
+
+        return self.parameters[self.minParamName]
+
+    @property
+    def max(self):
+
+        return self.parameters[self.maxParamName]
+
+    def prob(self, data):
+
+        min = self.min
+        max = self.max
+
+        return 1. / (max - min)
+
+    def getParameterNames(self):
+
+        return self.paramNames
+
+    def getFloatingParameterNames(self):
+
+        return [p.name for p in filter(lambda p : not p.isFixed, self.parameters.values())]
+
+    def lnprob(self, data):
+
+        return np.log(self.prob(data))
+
+    def hasDefaultPrior(self):
+
+        return True
+
+    def sample(self, nEvents):
+        return np.random.uniform(self.min, self.max, size = nEvents) # Hehehe
+
+    def prior(self, data):
+
+        p = 0.0 if (any(data > self.max) or any(data < self.min)) else 1.0
+
+        return p * np.ones(data.shape)
+
+    def lnprior(self, data):
+
+        p = -np.inf if (any(data > self.max) or any(data < self.min)) else 0.0
+
+        return p * np.ones(data.shape)
+
+class CrystalBall(Distribution):
+
+    """
+
+    Crystal Ball distribution.
+
+    """
+
+    # Takes dictionary of Parameters with name mean and sigma
+    def __init__(self, parameters = None, name = 'crystalBall'):
+
+        super(CrystalBall, self).__init__(parameters, name)
+
+        # Names correspond to input parameter dictionary
+
+        self.meanParamName = 'mean'
+        self.sigmaParamName = 'sigma'
+
+        self.aParamName = 'a'
+        self.nParamName = 'n'
+
+        # Names of actual parameter objects
+        self.paramNames = [p.name for p in self.parameters.values()]
+
+    @property
+    def a(self):
+
+        return self.parameters[self.aParamName]
+
+    @property
+    def n(self):
+
+        return self.parameters[self.nParamName]
+
+    @property
+    def sigma(self):
+
+        return self.parameters[self.sigmaParamName]
+
+    @property
+    def mean(self):
+
+        return self.parameters[self.meanParamName]
+
+    def prob(self, data):
+
+        a = self.a
+        n = self.n
+        m = self.mean
+        s = self.sigma
+
+        nOverA = n / np.abs(a)
+        expA = np.exp(-0.5 * np.abs(a) ** 2)
+
+        A = ( nOverA ) ** n * expA
+        B = ( nOverA ) - np.abs(a)
+        C = ( nOverA ) * (1./(n - 1)) * expA
+        D = np.sqrt(0.5 * np.pi) * (1 + erf(np.abs(a) / np.sqrt(2)))
+
+        N = 1./( s * (C + D) )
+
+        z = (data - m) / s
+
+        v1 = N * np.exp( - 0.5 * z ** 2 )
+        v2 = N * A * (B - z) ** (-n)
+
+        return np.where(z > -a, v1, v2)
+
+    def getParameterNames(self):
+
+        return self.paramNames
+
+    def getFloatingParameterNames(self):
+
+        return [p.name for p in filter(lambda p : not p.isFixed, self.parameters.values())]
+
+    def lnprob(self, data):
+
+        return np.log(self.prob(data))
+
+    def hasDefaultPrior(self):
+
+        return True
+
+    def sample(self, nEvents):
+        return np.random.uniform(self.min, self.max, size = nEvents) # Hehehe
 
     def prior(self, data):
 
