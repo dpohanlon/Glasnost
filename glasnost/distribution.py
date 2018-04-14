@@ -331,8 +331,10 @@ class CrystalBall(Distribution):
 
         return True
 
-    def sample(self, nEvents):
-        return np.random.uniform(self.min, self.max, size = nEvents) # Hehehe
+    def sample(self, nEvents, min, max):
+        sampler = gl.sampler.RejectionSampler(self.prob, min, max)
+        
+        return sampler.sample(nEvents)
 
     def prior(self, data):
 
