@@ -333,7 +333,7 @@ class CrystalBall(Distribution):
 
     def sample(self, nEvents, min, max):
         sampler = gl.sampler.RejectionSampler(self.prob, min, max)
-        
+
         return sampler.sample(nEvents)
 
     def prior(self, data):
@@ -347,6 +347,76 @@ class CrystalBall(Distribution):
         p = 0.0 if self.sigma > 0.0 else -np.inf
 
         return p * np.ones(data.shape)
+
+class Exponential(Distribution):
+
+    """
+
+    Exponential distribution, with shape parameter 'a', and min and max ranges.
+
+    """
+
+    # Takes dictionary of Parameters with name mean and sigma
+    def __init__(self, parameters = None, name = 'exponential'):
+
+        super(Exponential, self).__init__(parameters, name)
+
+        # Names correspond to input parameter dictionary
+
+        self.aParamName = 'a'
+
+        self.minParamName = 'min'
+        self.maxParamName = 'max'
+
+        # Names of actual parameter objects
+        self.paramNames = [p.name for p in self.parameters.values()]
+
+        # Make sure the min and max range are fixed
+        for p in [self.max, self.max]:
+            if not p.isFixed:
+                self.fixed_ = True
+
+    @property
+    def a(self):
+
+        return self.parameters[self.aParamName]
+
+    @property
+    def min(self):
+
+        return self.parameters[self.minParamName]
+
+    @property
+    def max(self):
+
+        return self.parameters[self.maxParamName]
+
+    def norm(self):
+        if self.a == 0:
+            return 1. / (self.max - self.min)
+        else:
+            return self.a / ( np.exp(self.a * self.max) - np.exp(self.a * self.min) )
+
+    def prob(self, data):
+
+        return self.norm() * np.exp(self.a * data)
+
+    def getParameterNames(self):
+
+        return self.paramNames
+
+    def getFloatingParameterNames(self):
+
+        return [p.name for p in filter(lambda p : not p.isFixed, self.parameters.values())]
+
+    def lnprob(self, data):
+
+        return np.log(self.prob(data))
+
+    def sample(self, nEvents):
+        sampler = gl.sampler.RejectionSampler(self.prob, self.min, self.max)
+
+        return sampler.sample(nEvents)
 
 if __name__ == '__main__':
 
