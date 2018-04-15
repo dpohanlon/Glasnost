@@ -24,6 +24,9 @@ class Distribution(object):
         self.name = gl.utils.nameScope.rstrip('/') if not name else gl.utils.nameScope + name
         self.parameters = parameters
 
+        # Names of actual parameter objects
+        self.paramNames = [p.name for p in self.parameters.values()]
+
     def updateParameters(self, parameters):
 
         for p in parameters.items():
@@ -49,10 +52,17 @@ class Distribution(object):
 
         pass
 
-    @abstractmethod
+    def getParameterNames(self):
+
+        return self.paramNames
+
+    def getFloatingParameterNames(self):
+
+        return [p.name for p in filter(lambda p : not p.isFixed, self.parameters.values())]
+
     def lnprob(self, data):
 
-        pass
+        return np.log(self.prob(data))
 
     @abstractmethod
     def sample(self, nEvents):
@@ -109,9 +119,6 @@ class Gaussian(Distribution):
         self.meanParamName = 'mean'
         self.sigmaParamName = 'sigma'
 
-        # Names of actual parameter objects
-        self.paramNames = [p.name for p in self.parameters.values()]
-
     # mean, sigma are functions that always return the mean, sigma parameter from the dictionary,
     # which is updatable , without knowing the exact name of the sigma parameter in this model
 
@@ -134,14 +141,6 @@ class Gaussian(Distribution):
         e = - ((data - m) ** 2) / (2. * s ** 2)
 
         return g * np.exp(e)
-
-    def getParameterNames(self):
-
-        return self.paramNames
-
-    def getFloatingParameterNames(self):
-
-        return [p.name for p in filter(lambda p : not p.isFixed, self.parameters.values())]
 
     def lnprob(self, data):
 
@@ -215,18 +214,6 @@ class Uniform(Distribution):
         max = self.max
 
         return 1. / (max - min)
-
-    def getParameterNames(self):
-
-        return self.paramNames
-
-    def getFloatingParameterNames(self):
-
-        return [p.name for p in filter(lambda p : not p.isFixed, self.parameters.values())]
-
-    def lnprob(self, data):
-
-        return np.log(self.prob(data))
 
     def hasDefaultPrior(self):
 
@@ -315,18 +302,6 @@ class CrystalBall(Distribution):
 
         return np.where(z > -a, v1, v2)
 
-    def getParameterNames(self):
-
-        return self.paramNames
-
-    def getFloatingParameterNames(self):
-
-        return [p.name for p in filter(lambda p : not p.isFixed, self.parameters.values())]
-
-    def lnprob(self, data):
-
-        return np.log(self.prob(data))
-
     def hasDefaultPrior(self):
 
         return True
@@ -400,18 +375,6 @@ class Exponential(Distribution):
     def prob(self, data):
 
         return self.norm() * np.exp(self.a * data)
-
-    def getParameterNames(self):
-
-        return self.paramNames
-
-    def getFloatingParameterNames(self):
-
-        return [p.name for p in filter(lambda p : not p.isFixed, self.parameters.values())]
-
-    def lnprob(self, data):
-
-        return np.log(self.prob(data))
 
     def sample(self, nEvents):
         sampler = gl.sampler.RejectionSampler(self.prob, self.min, self.max)
