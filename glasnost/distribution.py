@@ -24,9 +24,6 @@ class Distribution(object):
         self.name = gl.utils.nameScope.rstrip('/') if not name else gl.utils.nameScope + name
         self.parameters = parameters
 
-        # Names of actual parameter objects
-        self.paramNames = [p.name for p in self.parameters.values()]
-
     def updateParameters(self, parameters):
 
         for p in parameters.items():
@@ -65,7 +62,7 @@ class Distribution(object):
         return np.log(self.prob(data))
 
     @abstractmethod
-    def sample(self, nEvents):
+    def sample(self, nEvents, minVal, maxVal):
 
         print('Sample not implemented for %s!' %(self.name))
 
@@ -119,6 +116,9 @@ class Gaussian(Distribution):
         self.meanParamName = 'mean'
         self.sigmaParamName = 'sigma'
 
+        # Names of actual parameter objects
+        self.paramNames = [p.name for p in self.parameters.values()]
+
     # mean, sigma are functions that always return the mean, sigma parameter from the dictionary,
     # which is updatable , without knowing the exact name of the sigma parameter in this model
 
@@ -156,7 +156,10 @@ class Gaussian(Distribution):
 
         return True
 
-    def sample(self, nEvents):
+    def sample(self, nEvents, minVal, maxVal):
+        # What if this is truncated? Oversample?
+        # 'Yield' only true in a finite range
+
         return np.random.normal(self.mean, self.sigma, size = nEvents) # Hehehe
 
     def prior(self, data):
@@ -306,8 +309,8 @@ class CrystalBall(Distribution):
 
         return True
 
-    def sample(self, nEvents, min, max):
-        sampler = gl.sampler.RejectionSampler(self.prob, min, max)
+    def sample(self, nEvents, minVal, maxVal):
+        sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal)
 
         return sampler.sample(nEvents)
 
@@ -376,8 +379,8 @@ class Exponential(Distribution):
 
         return self.norm() * np.exp(self.a * data)
 
-    def sample(self, nEvents):
-        sampler = gl.sampler.RejectionSampler(self.prob, self.min, self.max)
+    def sample(self, nEvents, minVal, maxVal):
+        sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal)
 
         return sampler.sample(nEvents)
 

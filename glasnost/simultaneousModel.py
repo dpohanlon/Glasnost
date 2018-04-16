@@ -59,6 +59,11 @@ class SimultaneousModel(Model):
 
         return 0 # Simultaneous, handled by the sub-models
 
+    def generate(self, minVal, maxVal):
+        z = [c.generate(minVal, maxVal) for c in self.fitComponentsSimultaneous]
+
+        return z
+
     def lnprob(self, data):
 
         # Already lnProb - just sum these to get the total likelihood

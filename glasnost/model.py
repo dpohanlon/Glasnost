@@ -19,7 +19,7 @@ class Model(Distribution):
 
     def __init__(self, initialFitYields = {}, initialFitComponents = {}, data = None, name = ''):
 
-        super(Model, self).__init__(name)
+        super(Model, self).__init__(name = name)
 
         # Dictionary of distribution names to yield Parameters
         self.fitYields = initialFitYields
@@ -219,6 +219,17 @@ class Model(Distribution):
         out = OrderedDict(sorted(out.items(), key = lambda x : x[0]))
 
         return out
+
+    def generate(self, minVal, maxVal):
+        # Generate according to yields and component models
+        # Pass min and max ranges - ideally these would be separate for each 1D fit
+
+        yields = {n : y.value_ for n, y in self.fitYields.items()}
+        components = list(self.fitComponents.values())
+
+        z = np.concatenate([ component.sample(yields[component.name], minVal = minVal, maxVal = maxVal) for component in components ])
+
+        return z
 
     def logL(self, params): # for emcee
 
