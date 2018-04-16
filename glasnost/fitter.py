@@ -4,6 +4,8 @@ np.random.seed(42)
 
 from iminuit import Minuit
 
+from tqdm import tqdm
+
 import emcee
 
 import sys
@@ -31,7 +33,10 @@ class Fitter(object):
 
         self.backend = backend
 
-    def fit(self, data, verbose = False, **kwargs):
+    def fit(self, data, verbose = False,
+            nIterations = 1000, # For emcee
+            nWalkers = 100, # For emcee
+             **kwargs):
 
         self.model.setData(data)
 
@@ -65,8 +70,6 @@ class Fitter(object):
 
         if self.backend in ['emcee']:
 
-            nwalkers = 100
-
             params = self.model.floatingParameterNames
             initParams = np.array([self.model.parameters[p].value_ for p in params])
             ndim = len(initParams)
@@ -75,6 +78,12 @@ class Fitter(object):
 
             minimiser = emcee.EnsembleSampler(nwalkers, ndim, self.model.logL, threads = 1)
 
-            minimiser.run_mcmc(ipos, 1000)
+            # minimiser.run_mcmc(ipos, 1000)
+
+            # A hack for a tqdm progress bar
+            for pos,lnp,rstate in tqdm(minimiser.sample(ipos, iterations = nIterations),
+                                       desc = 'Running Emcee',
+                                       total = nIterations):
+                pass
 
         return minimiser

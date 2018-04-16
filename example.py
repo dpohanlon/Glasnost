@@ -33,8 +33,8 @@ np.random.seed(42)
 
 # data = np.concatenate((np.random.normal(-1., 4., 1000), np.random.normal(0., 1., 1000), np.random.normal(3., 1., 1000)))
 
-data1 = np.concatenate((np.random.normal(0., 1., 10000), np.random.normal(0., 3., 10000)))
-data2 = np.concatenate((np.random.normal(0., 1., 5000), np.random.normal(0., 3., 5000)))
+data1 = np.concatenate((np.random.normal(0., 1., 1000), np.random.normal(0., 3., 1000)))
+data2 = np.concatenate((np.random.normal(0., 1., 500), np.random.normal(0., 3., 500)))
 
 with gl.name_scope('massFit'):
 
@@ -81,64 +81,64 @@ with gl.name_scope('massFit'):
 
     model = gl.SimultaneousModel(initialFitComponents = [model1, model2])
 
-s1, s2 = model.generate(-10, 10)
+# s1, s2 = model.generate(-10, 10)
+#
+# plt.hist(s1, bins = 100, histtype = 'stepfilled')
+# plt.savefig('samples1.pdf')
+# plt.clf()
+# plt.hist(s2, bins = 100, histtype = 'stepfilled')
+# plt.savefig('samples2.pdf')
 
-plt.hist(s1, bins = 50)
-plt.savefig('samples1.pdf')
-plt.clf()
-plt.hist(s2, bins = 50)
-plt.savefig('samples2.pdf')
 
-#
-# fitter = gl.Fitter(model, backend = 'emcee')
-#
-# res = fitter.fit([data1, data2], verbose = True)
-#
-# print(res.acceptance_fraction)
-#
-# samples = res.chain[:, 200:, :].reshape((-1, 7))
-#
-# means = np.mean(samples, axis = 0)
-# stds = np.std(samples, axis = 0)
-#
-# pprint(means)
-#
-# pprint(stds)
-#
-# for i in range(7):
-#
-#     plt.plot(samples[:,i], lw = 2.0)
-#     plt.savefig('samples' + str(i) + '.png')
-#     plt.clf()
-#
-#     plt.hist(samples[:,i], bins = 50)
-#     plt.savefig('samplesHist' + str(i) + '.png')
-#     plt.clf()
-#
-# c = corner.corner(samples, truths = [0.0, 1.0, 1000., 3.0, 1000., 500., 500.])
-# c.savefig('corner.pdf')
-#
-# f, axarr = plt.subplots(1, 2, sharey = True)
-#
-# plotter = gl.Plotter(model1, data1)
-# plotter.plotDataModel(ax = axarr[0])
-#
-# axarr[0].set_xlabel('The things')
-# axarr[0].set_ylabel('How many things')
-#
-# plt.xlim(np.min(data1), np.max(data1))
-#
-# # axarr[0].set_yscale("log", nonposy='clip')
-# # axarr[0].set_ylim(1)
-#
-# plotter = gl.Plotter(model2, data2)
-# plotter.plotDataModel(ax = axarr[1])
-#
-# axarr[1].set_xlabel('The things')
-#
-# plt.xlim(np.min(data2), np.max(data2))
-#
-# # axarr[1].set_yscale("log", nonposy='clip')
-# # axarr[1].set_ylim(1)
-#
-# plt.savefig('testPlot.pdf', bbox_inches = 'tight')
+fitter = gl.Fitter(model, backend = 'emcee')
+
+res = fitter.fit([data1, data2], verbose = True)
+
+print(res.acceptance_fraction)
+
+samples = res.chain[:, 200:, :].reshape((-1, 7))
+
+means = np.mean(samples, axis = 0)
+stds = np.std(samples, axis = 0)
+
+pprint(means)
+
+pprint(stds)
+
+for i in range(7):
+
+    plt.plot(samples[:,i], lw = 2.0)
+    plt.savefig('samples' + str(i) + '.png')
+    plt.clf()
+
+    plt.hist(samples[:,i], bins = 50)
+    plt.savefig('samplesHist' + str(i) + '.png')
+    plt.clf()
+
+c = corner.corner(samples, truths = [0.0, 1.0, 1000., 3.0, 1000., 500., 500.])
+c.savefig('corner.pdf')
+
+f, axarr = plt.subplots(1, 2, sharey = True)
+
+plotter = gl.Plotter(model1, data1)
+plotter.plotDataModel(ax = axarr[0])
+
+axarr[0].set_xlabel('The things')
+axarr[0].set_ylabel('How many things')
+
+plt.xlim(np.min(data1), np.max(data1))
+
+# axarr[0].set_yscale("log", nonposy='clip')
+# axarr[0].set_ylim(1)
+
+plotter = gl.Plotter(model2, data2)
+plotter.plotDataModel(ax = axarr[1])
+
+axarr[1].set_xlabel('The things')
+
+plt.xlim(np.min(data2), np.max(data2))
+
+# axarr[1].set_yscale("log", nonposy='clip')
+# axarr[1].set_ylim(1)
+
+plt.savefig('testPlot.pdf', bbox_inches = 'tight')
