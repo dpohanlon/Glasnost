@@ -61,7 +61,7 @@ class Distribution(object):
 
         return np.log(self.prob(data))
 
-    @abstractmethod
+    @abstractmethod ##
     def sample(self, nEvents, minVal, maxVal):
 
         print('Sample not implemented for %s!' %(self.name))
@@ -380,7 +380,11 @@ class Exponential(Distribution):
         return self.norm() * np.exp(self.a * data)
 
     def sample(self, nEvents, minVal, maxVal):
-        sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal)
+
+        # Exponential is monotonic
+        ceiling = np.max(self.prob(np.array([minVal, maxVal])))
+
+        sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal, ceiling = ceiling)
 
         return sampler.sample(nEvents)
 

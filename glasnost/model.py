@@ -86,19 +86,22 @@ class Model(Distribution):
 
         if self.fitYields:
             for y in self.fitYields.values():
-                values[y.name] = y.value
+                if not y.isFixed:
+                    values[y.name] = y.value
 
         for c in self.fitComponents.values():
             for v in c.getParameters().values():
-                values[v.name] = v.value
+                if not v.isFixed:
+                    values[v.name] = v.value
 
         return values
 
     def parameterRangeLnPriors(self):
 
         # Fill prior for ranges, doesn't depend on data
+        # (Only if these ranges aren't none)
 
-        if any([y.value_ > y.max or y.value_ < y.min for y in self.fitYields.values()]):
+        if any([y.min and y.max and (y.value_ > y.max or y.value_ < y.min) for y in self.fitYields.values()]):
             return -np.inf
 
         # Use np.zeros(1) as dummy data -> won't be used anyway if it's inf (which is true for
@@ -214,6 +217,14 @@ class Model(Distribution):
 
         for k, v in self.getFloatingParameterValues().items():
             out['error_' + k] = abs(0.1 * v) if 'yield' not in k else abs(1.)
+
+        # Set limits also, rather than using the prior
+        # (This is probably slow, try and merge with above as it gets similar things)
+
+        for c in self.fitComponents.values():
+            for v in c.getParameters().values():
+                if v.min and v.max:
+                    out['limit_' + v.name] = (v.min, v.max)
 
         # Might be slow - try another way
         out = OrderedDict(sorted(out.items(), key = lambda x : x[0]))

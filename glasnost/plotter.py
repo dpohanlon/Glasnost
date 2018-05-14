@@ -19,7 +19,9 @@ rcParams['ytick.direction'] = 'in'
 
 rcParams.update({'figure.autolayout': True})
 
-from seaborn import apionly as sns
+# from seaborn import apionly as sns # Deprecated?
+import seaborn as sns
+
 # colours = sns.light_palette((210, 90, 60), input="husl")
 # colours = ['#ff3000', '#ff8f00', '#14b8b8']
 colours = sns.color_palette("Spectral", 5)
@@ -124,15 +126,15 @@ class Plotter(object):
 
         # Components
 
-        # yields = list(self.model.fitYields.values())
-        # for i, c in enumerate(self.model.fitComponents.values()):
-        #     plt.plot(x, c.prob(x) * yields[i] * binWidth, **self.componentCurveConfig, color = colours[i])
-        #
-        # return fig, ax
+        yields = list(self.model.fitYields.values())
+        for i, c in enumerate(self.model.fitComponents.values()):
+            plt.plot(x, c.prob(x) * yields[i] * binWidth, **self.componentCurveConfig, color = colours[i])
 
-        yields = list(self.model.fitYields.values())[1:]
-        for i, c in enumerate(list(self.model.fitComponents.values())[1:]):
-            f.fill_between(x, 0, c.prob(x) * yields[i] * binWidth, color = colours[i])
+        return fig, ax
+
+        # yields = list(self.model.fitYields.values())[1:]
+        # for i, c in enumerate(list(self.model.fitComponents.values())[1:]):
+        #     f.fill_between(x, 0, c.prob(x) * yields[i] * binWidth, color = colours[i])
 
         plt.ylim(ymin = 0)
         plt.xlim(minVal, maxVal)

@@ -71,19 +71,20 @@ class Fitter(object):
         if self.backend in ['emcee']:
 
             params = self.model.floatingParameterNames
+
             initParams = np.array([self.model.parameters[p].value_ for p in params])
             ndim = len(initParams)
 
-            ipos = [initParams + 1e-4 * np.random.randn(ndim) for i in range(nwalkers)]
+            ipos = [initParams + 1e-4 * np.random.randn(ndim) for i in range(nWalkers)]
 
-            minimiser = emcee.EnsembleSampler(nwalkers, ndim, self.model.logL, threads = 1)
+            minimiser = emcee.EnsembleSampler(nWalkers, ndim, self.model.logL, threads = 1)
 
             # minimiser.run_mcmc(ipos, 1000)
 
             # A hack for a tqdm progress bar
-            for pos,lnp,rstate in tqdm(minimiser.sample(ipos, iterations = nIterations),
-                                       desc = 'Running Emcee',
-                                       total = nIterations):
+            for pos, lnp, rstate in tqdm(minimiser.sample(ipos, iterations = nIterations),
+                                         desc = 'Running Emcee',
+                                         total = nIterations):
                 pass
 
         return minimiser
