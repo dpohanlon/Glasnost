@@ -17,12 +17,29 @@ class Model(Distribution):
 
     """
 
-    def __init__(self, initialFitYields = {}, initialFitComponents = {}, data = None, name = ''):
+    def __init__(self, initialFitYields = {}, initialFitComponents = {}, initialFitFracs = {}, data = None, name = ''):
 
         super(Model, self).__init__(name = name)
 
+        if initialFitFracs and initialFitYields:
+            print('Use either fit fractions (of size nComponents-1), or fit yields (of size nComponents).')
+            exit(1)
+
+        if initialFitFracs and len(initialFitFracs) != len(initialFitComponents) - 1:
+            print('When using fit fractions, the total number of fractions must be nComponents-1 (to enforce the sum-to-one requirement).')
+            exit(1)
+
+        if initialFitYields and len(initialFitYields) != len(initialFitComponents):
+            print('When using fit yields, the total number of fractions must be nComponents.')
+            exit(1)
+
+        # If neither fitYields or fitFracs are filled, assume the weighting in the likelihood is democratic
+
         # Dictionary of distribution names to yield Parameters
         self.fitYields = initialFitYields
+
+        # Dictionary of distribution names to frac Parameters
+        self.fitFracs = initialFitFracs
 
         # Dictionary of distribution names to distributions
         self.fitComponents = initialFitComponents
@@ -30,7 +47,7 @@ class Model(Distribution):
         self.fitComponentParameterNames = {}
 
         for componentName, component in initialFitComponents.items():
-            self.fitComponentParameterNames[componentName] = component.getParameterNames()
+            self.fitComponentParameterNames[componentName] = component.getFloatingParameterNames()
 
         self.parameters = {}
 
@@ -42,7 +59,13 @@ class Model(Distribution):
             for y in initialFitYields.values():
                 self.parameters[y.name] = y
 
+        if initialFitFracs:
+            for y in initialFitFracs.values():
+                self.parameters[y.name] = y
+
         self.data = data
+
+        self.totalYield_ = 0.
 
         self.floatingParameterNames = self.getFloatingParameterNames()
 
@@ -65,8 +88,20 @@ class Model(Distribution):
 
         return names
 
+    def setTotalYield(self, y):
+        self.totalYield_ = y
+
+    def testFracsSumToOne(self):
+
+        s = np.sum(self.fitFracs.values())
+
+        return np.isclose(s, 1.0)
+
+    def getTotalFracs(self):
+        return np.sum(list(self.fitFracs.values())) if self.fitFracs else 0.
+
     def getTotalYield(self):
-        return np.sum(list(self.fitYields.values())) if self.fitYields else 0.
+        return np.sum(list(self.fitYields.values())) if self.fitYields else self.totalYield_
 
     def getFloatingParameterNames(self):
 
@@ -78,6 +113,12 @@ class Model(Distribution):
                 if not y.isFixed:
                     names.add(y.name)
 
+        if self.fitFracs:
+            # Add yields from the model
+            for y in self.fitFracs.values():
+                if not y.isFixed:
+                    names.add(y.name)
+
         return sorted(list(names))
 
     def getFloatingParameterValues(self):
@@ -86,6 +127,11 @@ class Model(Distribution):
 
         if self.fitYields:
             for y in self.fitYields.values():
+                if not y.isFixed:
+                    values[y.name] = y.value
+
+        if self.fitFracs:
+            for y in self.fitFracs.values():
                 if not y.isFixed:
                     values[y.name] = y.value
 
@@ -102,6 +148,9 @@ class Model(Distribution):
         # (Only if these ranges aren't none)
 
         if any([y.min and y.max and (y.value_ > y.max or y.value_ < y.min) for y in self.fitYields.values()]):
+            return -np.inf
+
+        if any([y.min and y.max and (y.value_ > y.max or y.value_ < y.min) for y in self.fitFracs.values()]):
             return -np.inf
 
         # Use np.zeros(1) as dummy data -> won't be used anyway if it's inf (which is true for
@@ -132,11 +181,28 @@ class Model(Distribution):
 
         # yields = list([y.value_ for y in self.fitYields.values()]) if self.fitYields else [1. for i in range(len(components))]
 
+        # Call this yields, but really it can represent either yields or fracs
         yields = None
         if self.fitYields:
             yields = {n : y.value_ for n, y in self.fitYields.items()}
+        elif self.fitFracs:
+            # Get the fracs for those provided
+            fracsPresent = set([c.name for c in components])
+            yields = {}
+
+            for n, f in self.fitFracs.items():
+                yields[n] = f.value_
+                fracsPresent.remove(n)
+
+            if len(fracsPresent) != 1:
+                print('Number of fracs with no value is not one, something is wrong here.')
+                exit(1)
+
+            sumFracs = np.sum(yields.values())
+            yields[fracsPresent.pop()] = 1. - sumFracs
+
         else:
-            yields = {c.name : 1.0 for c in self.fitComponents.values()}
+            yields = {c.name : (1.0 / len(components)) for c in components}
 
         # z = [ yields[i] * components[i].prob(data) for i in range(len(components)) ]
         z = [ yields[component.name] * component.prob(data) for component in components ]
@@ -162,20 +228,23 @@ class Model(Distribution):
 
     def lnprobVal(self, data):
 
-        # With EML criteria
-
-        nObs = len(data)
-        totalYield = self.getTotalYield()
-
         lnPriors = self.parameterRangeLnPriors()
 
         # Short circuit to avoid returning nan
         if np.isinf(lnPriors):
             return -np.inf
 
-        lnP = np.sum(self.lnprob(data) + self.lnprior(data)) + nObs * np.log(totalYield) - totalYield
+        lnP = np.sum(self.lnprob(data) + self.lnprior(data))
+        lnP += lnPriors
 
-        lnP += self.parameterRangeLnPriors()
+        if self.fitYields:
+
+            # With EML criteria
+
+            nObs = len(data)
+            totalYield = self.getTotalYield()
+
+            lnP += nObs * np.log(totalYield) - totalYield
 
         return lnP
 
@@ -234,6 +303,10 @@ class Model(Distribution):
     def generate(self, minVal, maxVal):
         # Generate according to yields and component models
         # Pass min and max ranges - ideally these would be separate for each 1D fit
+
+        if not self.fitYields:
+            print('Cannot generate from a model without specifying the fitYields (yet).')
+            exit(1)
 
         yields = {n : y.value_ for n, y in self.fitYields.items()}
         components = list(self.fitComponents.values())

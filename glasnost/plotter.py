@@ -125,10 +125,28 @@ class Plotter(object):
         f.plot(x, modelToPlot, **self.totalCurveConfig)
 
         # Components
+        # WOULD BE GOOD TO HAVE A POSTPROCESS STEP THAT FINALISES ALL INFORMATION INCLUDING FRACS FOR ALL COMPONENTS,
+        # PROPAGATES CONSTRAINTS, ETC
+        # In the mean time, calculate this on the fly
 
-        yields = list(self.model.fitYields.values())
-        for i, c in enumerate(self.model.fitComponents.values()):
-            plt.plot(x, c.prob(x) * yields[i] * binWidth, **self.componentCurveConfig, color = colours[i])
+        yields = {}
+        if self.model.fitYields:
+            yields = self.model.fitYields
+        else:
+            totalYield = self.model.getTotalYield()
+            totFF = 0
+
+            for n, f in self.model.fitFracs.items():
+                yields[n] = totalYield * f.value_
+                totFF += f.value_
+
+            for k in self.model.fitComponents.keys():
+                if k not in yields:
+                    yields[k] = totalYield * (1. - totFF)
+        print(yields)
+        for i, (n, c) in enumerate(self.model.fitComponents.items()):
+            print i, (n, c)
+            plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
 
         return fig, ax
 
