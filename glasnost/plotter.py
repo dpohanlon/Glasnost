@@ -143,9 +143,8 @@ class Plotter(object):
             for k in self.model.fitComponents.keys():
                 if k not in yields:
                     yields[k] = totalYield * (1. - totFF)
-        print(yields)
+
         for i, (n, c) in enumerate(self.model.fitComponents.items()):
-            print i, (n, c)
             plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
 
         return fig, ax

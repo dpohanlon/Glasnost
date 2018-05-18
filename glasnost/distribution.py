@@ -6,6 +6,9 @@ from scipy.special import erf
 
 import glasnost as gl
 
+# Adaptive vectorised quadrature
+from quadpy.line_segment import integrate_adaptive
+
 class Distribution(object):
 
     """
@@ -65,6 +68,13 @@ class Distribution(object):
     def sample(self, nEvents, minVal, maxVal):
 
         print('Sample not implemented for %s!' %(self.name))
+
+    def integral(self, minVal, maxVal):
+
+        # Might need to fiddle with the tolerance sometimes
+        int, err = integrate_adaptive(self.prob, [minVal, maxVal], 1E-3)
+
+        return int
 
     def hasDefaultPrior(self):
 
@@ -157,10 +167,28 @@ class Gaussian(Distribution):
         return True
 
     def sample(self, nEvents, minVal, maxVal):
-        # What if this is truncated? Oversample?
-        # 'Yield' only true in a finite range
 
-        return np.random.normal(self.mean, self.sigma, size = nEvents) # Hehehe
+        integral = self.integral(minVal, maxVal)
+
+        # Oversample and then truncate
+        genEvents = nEvents * int(1./integral)
+        samples = np.random.normal(self.mean, self.sigma, size = genEvents)
+        samples = samples[samples > minVal & samples < maxVal]
+
+        return samples
+
+    def cdf(self, x):
+
+        erfArg = (x - self.mean) / (self.sigma * np.sqrt(2.))
+
+        return 0.5 * (1 + erf(erfArg))
+
+    def integral(self, minVal, maxVal):
+
+        cdfMin = self.cdf(minVal)
+        cdfMax = self.cdf(maxVal)
+
+        return cdfMax - cdfMin
 
     def prior(self, data):
 
@@ -223,7 +251,21 @@ class Uniform(Distribution):
         return True
 
     def sample(self, nEvents):
+
         return np.random.uniform(self.min, self.max, size = nEvents) # Hehehe
+
+    def integral(self, minVal, maxVal):
+
+        if minVal <= self.min and maxVal >= self.max:
+            return 1.0
+        elif maxVal <= self.min or minVal >= self.max:
+            return 0.0
+        elif minVal > self.min and maxVal > self.max:
+            return (self.max - minVal) / (self.max - self.min)
+        elif minVal < self.min and maxVal < self.max:
+            return (maxVal - self.min) / (self.max - self.min)
+        else: # range is a subrange of (self.min, self.max)
+            return (maxVal - minVal) / (self.max - self.min)
 
     def prior(self, data):
 
@@ -387,6 +429,19 @@ class Exponential(Distribution):
         sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal, ceiling = ceiling)
 
         return sampler.sample(nEvents)
+
+    def integral(self, minVal, maxVal):
+
+        if minVal <= self.min and maxVal >= self.max:
+            return 1.0
+        elif maxVal <= self.min or minVal >= self.max:
+            return 0.0
+        elif minVal > self.min and maxVal > self.max:
+            return (self.max - minVal) / (self.max - self.min)
+        elif minVal < self.min and maxVal < self.max:
+            return (maxVal - self.min) / (self.max - self.min)
+        else: # range is a subrange of (self.min, self.max)
+            return (maxVal - minVal) / (self.max - self.min)
 
 if __name__ == '__main__':
 

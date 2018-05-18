@@ -114,7 +114,7 @@ class Model(Distribution):
                     names.add(y.name)
 
         if self.fitFracs:
-            # Add yields from the model
+            # Add fracs from the model
             for y in self.fitFracs.values():
                 if not y.isFixed:
                     names.add(y.name)
