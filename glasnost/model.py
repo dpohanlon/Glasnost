@@ -17,7 +17,7 @@ class Model(Distribution):
 
     """
 
-    def __init__(self, initialFitYields = {}, initialFitComponents = {}, initialFitFracs = {}, data = None, name = ''):
+    def __init__(self, initialFitYields = {}, initialFitComponents = {}, initialFitFracs = {}, minVal = None, maxVal = None, data = None, name = ''):
 
         super(Model, self).__init__(name = name)
 
@@ -50,6 +50,9 @@ class Model(Distribution):
             self.fitComponentParameterNames[componentName] = component.getFloatingParameterNames()
 
         self.parameters = {}
+
+        self.min = minVal
+        self.max = maxVal
 
         for component in initialFitComponents.values():
             for parameter in component.getParameters().values():
@@ -204,8 +207,12 @@ class Model(Distribution):
         else:
             yields = {c.name : (1.0 / len(components)) for c in components}
 
-        # z = [ yields[i] * components[i].prob(data) for i in range(len(components)) ]
-        z = [ yields[component.name] * component.prob(data) for component in components ]
+        totalNorm = self.integral(self.min, self.max)
+        # norm = {n : c / totalNorm for (n, c) in self.getComponentIntegrals(self.min, self.max).items()}
+        norm = {n : c for (n, c) in self.getComponentIntegrals(self.min, self.max).items()}
+
+        # z = [ (1. / norm[component.name]) * yields[component.name] * component.prob(data) for component in components ]
+        z = [ norm[component.name] * yields[component.name] * component.prob(data) for component in components ]
 
         # Matrix of (nComponents, nData) -> uses lots of memory, rewrite using einsum?
         p = np.vstack(z)
@@ -299,6 +306,12 @@ class Model(Distribution):
         out = OrderedDict(sorted(out.items(), key = lambda x : x[0]))
 
         return out
+
+    def getComponentIntegrals(self, minVal, maxVal):
+        return {name : c.integral(minVal, maxVal) for (name, c) in self.fitComponents.items()}
+
+    def integral(self, minVal, maxVal):
+        return np.sum( list(self.getComponentIntegrals(minVal, maxVal).values()) )
 
     def generate(self, minVal, maxVal):
         # Generate according to yields and component models

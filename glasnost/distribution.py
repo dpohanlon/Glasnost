@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from scipy.special import erf
+from scipy.special import erf, gamma, beta
 
 import glasnost as gl
 
@@ -173,7 +173,7 @@ class Gaussian(Distribution):
         # Oversample and then truncate
         genEvents = nEvents * int(1./integral)
         samples = np.random.normal(self.mean, self.sigma, size = genEvents)
-        samples = samples[samples > minVal & samples < maxVal]
+        samples = samples[(samples > minVal) & (samples < maxVal)]
 
         return samples
 
@@ -442,6 +442,45 @@ class Exponential(Distribution):
             return (maxVal - self.min) / (self.max - self.min)
         else: # range is a subrange of (self.min, self.max)
             return (maxVal - minVal) / (self.max - self.min)
+
+class StudentsT(Distribution):
+
+    """
+
+    Student's t distribution
+
+    """
+
+    # Takes dictionary of Parameters with name mean and sigma
+    def __init__(self, parameters = None, name = 'studentsT'):
+
+        super(StudentsT, self).__init__(parameters, name)
+
+        # Names correspond to input parameter dictionary
+
+        self.nuParamName = 'nu'
+        self.meanParamName = 'mean'
+
+        # Names of actual parameter objects
+        self.paramNames = [p.name for p in self.parameters.values()]
+
+    @property
+    def nu(self):
+
+        return self.parameters[self.nuParamName]
+
+    @property
+    def mean(self):
+
+        return self.parameters[self.meanParamName]
+
+    def prob(self, data):
+
+        # Slightly faster and simpler than gamma definition
+        l = 1. / (np.sqrt(self.nu) * beta(0.5, 0.5 * self.nu))
+        r = (1. + (data - self.mean) ** 2 / self.nu) ** (-0.5 * (self.nu + 1.))
+
+        return l * r
 
 if __name__ == '__main__':
 

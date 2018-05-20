@@ -20,7 +20,7 @@ rcParams['ytick.direction'] = 'in'
 rcParams.update({'figure.autolayout': True})
 
 # from seaborn import apionly as sns # Deprecated?
-import seaborn as sns
+import seaborn.apionly as sns
 
 # colours = sns.light_palette((210, 90, 60), input="husl")
 # colours = ['#ff3000', '#ff8f00', '#14b8b8']
@@ -129,29 +129,29 @@ class Plotter(object):
         # PROPAGATES CONSTRAINTS, ETC
         # In the mean time, calculate this on the fly
 
-        yields = {}
-        if self.model.fitYields:
-            yields = self.model.fitYields
-        else:
-            totalYield = self.model.getTotalYield()
-            totFF = 0
+        # yields = {}
+        # if self.model.fitYields:
+        #     yields = self.model.fitYields
+        # else:
+        #     totalYield = self.model.getTotalYield()
+        #     totFF = 0
+        #
+        #     for n, f in self.model.fitFracs.items():
+        #         yields[n] = totalYield * f.value_
+        #         totFF += f.value_
+        #
+        #     for k in self.model.fitComponents.keys():
+        #         if k not in yields:
+        #             yields[k] = totalYield * (1. - totFF)
+        #
+        # for i, (n, c) in enumerate(self.model.fitComponents.items()):
+        #     plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
+        #
+        # return fig, ax
 
-            for n, f in self.model.fitFracs.items():
-                yields[n] = totalYield * f.value_
-                totFF += f.value_
-
-            for k in self.model.fitComponents.keys():
-                if k not in yields:
-                    yields[k] = totalYield * (1. - totFF)
-
-        for i, (n, c) in enumerate(self.model.fitComponents.items()):
-            plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
-
-        return fig, ax
-
-        # yields = list(self.model.fitYields.values())[1:]
-        # for i, c in enumerate(list(self.model.fitComponents.values())[1:]):
-        #     f.fill_between(x, 0, c.prob(x) * yields[i] * binWidth, color = colours[i])
+        yields = list(self.model.fitYields.values())[1:]
+        for i, c in enumerate(list(self.model.fitComponents.values())[1:]):
+            f.fill_between(x, 0, c.prob(x) * yields[i] * binWidth, color = colours[i])
 
         plt.ylim(ymin = 0)
         plt.xlim(minVal, maxVal)

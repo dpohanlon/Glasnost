@@ -92,8 +92,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     # Not == __sub__!
     def __rsub__(self, other):
-            return Parameter(other - self.value_, name = self.name + '-sub-float')
-
+            return Parameter(other - self.value_, name = self.name + '-rsub-float')
 
     def _div__(self, other):
         if isinstance(other, Parameter):
@@ -101,7 +100,9 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
         else:
             return Parameter(self.value_ / other, name = self.name + '-div-float')
 
-    __rdiv_ = _div__
+    # Not == __div__!
+    def __rdiv__(self, other):
+            return Parameter(other / self.value_, name = self.name + '-rdiv-float')
 
     def __pow__(self, other):
         if isinstance(other, Parameter):
