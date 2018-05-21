@@ -122,41 +122,53 @@ class Plotter(object):
         # Normalised according to the data binning also plotted
         modelToPlot *= binWidth
 
-        f.plot(x, modelToPlot, **self.totalCurveConfig)
+        # f.plot(x, modelToPlot, **self.totalCurveConfig) # Doesn't work with fracs + normalisation, fix me
 
         # Components
         # WOULD BE GOOD TO HAVE A POSTPROCESS STEP THAT FINALISES ALL INFORMATION INCLUDING FRACS FOR ALL COMPONENTS,
         # PROPAGATES CONSTRAINTS, ETC
         # In the mean time, calculate this on the fly
 
-        # yields = {}
-        # if self.model.fitYields:
-        #     yields = self.model.fitYields
-        # else:
-        #     totalYield = self.model.getTotalYield()
-        #     totFF = 0
-        #
-        #     for n, f in self.model.fitFracs.items():
-        #         yields[n] = totalYield * f.value_
-        #         totFF += f.value_
-        #
-        #     for k in self.model.fitComponents.keys():
-        #         if k not in yields:
-        #             yields[k] = totalYield * (1. - totFF)
-        #
-        # for i, (n, c) in enumerate(self.model.fitComponents.items()):
-        #     plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
-        #
-        # return fig, ax
+        yields = {}
+        if self.model.fitYields:
+            yields = self.model.fitYields
+        else:
+            totalYield = self.model.getTotalYield()
+            if totalYield < 1E-3:
+                print('WARNING: Total yield must be set if plotting with fractional components.')
 
-        yields = list(self.model.fitYields.values())[1:]
-        for i, c in enumerate(list(self.model.fitComponents.values())[1:]):
-            f.fill_between(x, 0, c.prob(x) * yields[i] * binWidth, color = colours[i])
+            totFF = 0
+
+            for n, frac in self.model.fitFracs.items():
+                yields[n] = totalYield * frac.value_
+                totFF += frac.value_
+
+            for k in self.model.fitComponents.keys():
+                if k not in yields:
+                    yields[k] = totalYield * (1. - totFF)
+
+        total = []
+
+        for i, (n, c) in enumerate(self.model.fitComponents.items()):
+            total.append(c.prob(x) * yields[n] * binWidth)
+            plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
+
+        total = np.sum(np.array(total), 0)
+        f.plot(x, total, **self.totalCurveConfig)
 
         plt.ylim(ymin = 0)
         plt.xlim(minVal, maxVal)
 
-        return
+        return fig, ax
+
+        # yields = list(self.model.fitYields.values())[1:]
+        # for i, c in enumerate(list(self.model.fitComponents.values())[1:]):
+        #     f.fill_between(x, 0, c.prob(x) * yields[i] * binWidth, color = colours[i])
+
+        # plt.ylim(ymin = 0)
+        # plt.xlim(minVal, maxVal)
+        #
+        # return
 
     def plotDataModel(self, **kwargs):
 

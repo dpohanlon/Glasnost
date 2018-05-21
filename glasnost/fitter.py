@@ -2,6 +2,8 @@ import numpy as np
 
 np.random.seed(42)
 
+from scipy.stats import gaussian_kde
+
 from iminuit import Minuit
 
 from tqdm import tqdm
@@ -32,6 +34,40 @@ class Fitter(object):
             print('WARNING: Backend %s not a valid backend; defaulting to Minuit.' % (backend) )
 
         self.backend = backend
+
+    def getMode(self, samples):
+
+        # Subsample so that this doesn't take forever
+        if (len(samples) > 10000):
+            samples = np.random.choice(samples, 10000)
+
+        kde = gaussian_kde(samples)
+        xs = np.linspace(np.min(samples), np.max(samples), 10000) # Make this settable
+
+        interp = kde(xs)
+        maxVal = xs[np.argmax(interp)]
+
+        return maxVal
+
+    def postProcessMCMC(self, minimiser):
+
+        # Set parameters to values accord to the maximum of the posterior probability
+        # for plotting
+
+        chain = minimiser.chain
+
+        # Burn in first 25%
+        samples = chain[:, int(chain.shape[1] * 0.25):, :].reshape((-1, self.model.getNFloatingParameters()))
+
+        # Names are in the same order these were given to the fitter
+        paramNames = self.model.getFloatingParameterNames()
+        params = self.model.getFloatingParameters()
+
+        for i, name in enumerate(paramNames):
+            vals = samples[:,i]
+
+            map = self.getMode(vals)
+            params[name].updateValue(map)
 
     def fit(self, data, verbose = False,
             nIterations = 1000, # For emcee
@@ -86,5 +122,7 @@ class Fitter(object):
                                          desc = 'Running Emcee',
                                          total = nIterations):
                 pass
+
+            self.postProcessMCMC(minimiser)
 
         return minimiser

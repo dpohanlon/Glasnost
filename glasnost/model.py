@@ -145,15 +145,36 @@ class Model(Distribution):
 
         return values
 
+    def getFloatingParameters(self):
+
+        values = {}
+
+        if self.fitYields:
+            for y in self.fitYields.values():
+                if not y.isFixed:
+                    values[y.name] = y
+
+        if self.fitFracs:
+            for y in self.fitFracs.values():
+                if not y.isFixed:
+                    values[y.name] = y
+
+        for c in self.fitComponents.values():
+            for v in c.getParameters().values():
+                if not v.isFixed:
+                    values[v.name] = v
+
+        return values
+
     def parameterRangeLnPriors(self):
 
         # Fill prior for ranges, doesn't depend on data
         # (Only if these ranges aren't none)
 
-        if any([y.min and y.max and (y.value_ > y.max or y.value_ < y.min) for y in self.fitYields.values()]):
+        if any([y.min or y.max and (y.value_ > y.max or y.value_ < y.min) for y in self.fitYields.values()]):
             return -np.inf
 
-        if any([y.min and y.max and (y.value_ > y.max or y.value_ < y.min) for y in self.fitFracs.values()]):
+        if any([y.min or y.max and (y.value_ > y.max or y.value_ < y.min) for y in self.fitFracs.values()]):
             return -np.inf
 
         # Use np.zeros(1) as dummy data -> won't be used anyway if it's inf (which is true for
@@ -182,6 +203,12 @@ class Model(Distribution):
         # If no yields are given, assume that all are weighted equally (for example if the components
         # are each individual models for a particular dataset)
 
+        lnPriors = self.parameterRangeLnPriors()
+
+        # Short circuit to avoid returning nan
+        if np.isinf(lnPriors):
+            return np.full_like(data, -np.inf)
+
         # yields = list([y.value_ for y in self.fitYields.values()]) if self.fitYields else [1. for i in range(len(components))]
 
         # Call this yields, but really it can represent either yields or fracs
@@ -201,7 +228,7 @@ class Model(Distribution):
                 print('Number of fracs with no value is not one, something is wrong here.')
                 exit(1)
 
-            sumFracs = np.sum(yields.values())
+            sumFracs = np.sum(list(yields.values()))
             yields[fracsPresent.pop()] = 1. - sumFracs
 
         else:
@@ -299,8 +326,22 @@ class Model(Distribution):
 
         for c in self.fitComponents.values():
             for v in c.getParameters().values():
-                if v.min and v.max:
+                if not v.isFixed:
+                    if v.min != None and v.max != None :
+                        out['limit_' + v.name] = (v.min, v.max)
+                    elif v.min != None:
+                        out['limit_' + v.name] = (v.min, abs(v.value_) * 100.)
+                    elif v.max != None:
+                        out['limit_' + v.name] = (-abs(v.value_) * 100, v.max)
+
+        for v in list(self.fitYields.values()) + list(self.fitFracs.values()):
+            if not v.isFixed:
+                if v.min != None and v.max != None :
                     out['limit_' + v.name] = (v.min, v.max)
+                elif v.min != None:
+                    out['limit_' + v.name] = (v.min, abs(v.value_) * 100.)
+                elif v.max != None:
+                    out['limit_' + v.name] = (-abs(v.value_) * 100, v.max)
 
         # Might be slow - try another way
         out = OrderedDict(sorted(out.items(), key = lambda x : x[0]))
