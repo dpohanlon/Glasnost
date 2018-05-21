@@ -64,7 +64,6 @@ class Distribution(object):
 
         return np.log(self.prob(data))
 
-    @abstractmethod ##
     def sample(self, nEvents, minVal, maxVal):
 
         print('Sample not implemented for %s!' %(self.name))
@@ -325,10 +324,10 @@ class CrystalBall(Distribution):
 
     def prob(self, data):
 
-        a = self.a
-        n = self.n
-        m = self.mean
-        s = self.sigma
+        a = self.a.value_
+        n = self.n.value_
+        m = self.mean.value_
+        s = self.sigma.value_
 
         nOverA = n / np.abs(a)
         expA = np.exp(-0.5 * np.abs(a) ** 2)
@@ -343,9 +342,13 @@ class CrystalBall(Distribution):
         z = (data - m) / s
 
         v1 = N * np.exp( - 0.5 * z ** 2 )
-        v2 = N * A * (B - z) ** (-n)
 
-        return np.where(z > -a, v1, v2)
+        # This can result in a complex number if this path isn't taken
+        # Make complex and then just take the real part
+        # (Check whether this is faster than just branching)
+        v2 = (N * A * (B - z)).astype(np.complex64) ** (-n)
+
+        return np.where(z > -a, v1, np.real(v2))
 
     def hasDefaultPrior(self):
 
@@ -447,7 +450,8 @@ class StudentsT(Distribution):
 
     """
 
-    Student's t distribution
+    Generalised Student's-t distribution in terms of a mean, width (sigma - not the standard deviation),
+    and normality parameter, nu.
 
     """
 
@@ -460,6 +464,7 @@ class StudentsT(Distribution):
 
         self.nuParamName = 'nu'
         self.meanParamName = 'mean'
+        self.sigmaParamName = 'sigma'
 
         # Names of actual parameter objects
         self.paramNames = [p.name for p in self.parameters.values()]
@@ -474,11 +479,16 @@ class StudentsT(Distribution):
 
         return self.parameters[self.meanParamName]
 
+    @property
+    def sigma(self):
+
+        return self.parameters[self.sigmaParamName]
+
     def prob(self, data):
 
         # Slightly faster and simpler than gamma definition
         l = 1. / (np.sqrt(self.nu) * beta(0.5, 0.5 * self.nu))
-        r = (1. + (data - self.mean) ** 2 / self.nu) ** (-0.5 * (self.nu + 1.))
+        r = (1. + ((data - self.mean) / self.sigma) ** 2 / self.nu) ** (-0.5 * (self.nu + 1.))
 
         return l * r
 
