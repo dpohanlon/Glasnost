@@ -1,0 +1,20 @@
+language: python
+
+python:
+    "2.7"
+    "3.6"
+
+install:
+    pip install numpy
+    pip install scipy
+    pip install matplotlib
+    pip install corner
+    pip install quadpy
+    pip install emcee
+    pip install iminuit
+    pip install tqdm
+
+    python setup.py install
+
+script:
+    python test/test.py
