@@ -47,7 +47,7 @@ def simpleGaussianModel(mean, width, nEvents):
 
     return model
 
-def simpleGaussianTests():
+def testSimpleGaussian():
 
     # Test generating and fitting back with the same model
 
