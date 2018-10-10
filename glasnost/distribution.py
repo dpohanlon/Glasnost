@@ -64,7 +64,7 @@ class Distribution(object):
 
         return np.log(self.prob(data))
 
-    def sample(self, nEvents, minVal, maxVal):
+    def sample(self, nEvents = None, minVal = None, maxVal = None):
 
         print('Sample not implemented for %s!' %(self.name))
 
@@ -165,13 +165,13 @@ class Gaussian(Distribution):
 
         return True
 
-    def sample(self, nEvents, minVal, maxVal):
+    def sample(self, nEvents = None, minVal = None, maxVal = None):
 
         integral = self.integral(minVal, maxVal)
 
         # Oversample and then truncate
         genEvents = nEvents * int(1./integral)
-        samples = np.random.normal(self.mean, self.sigma, size = genEvents)
+        samples = np.random.normal(self.mean, self.sigma, size = int(genEvents))
         samples = samples[(samples > minVal) & (samples < maxVal)]
 
         return samples
@@ -249,9 +249,10 @@ class Uniform(Distribution):
 
         return True
 
-    def sample(self, nEvents):
+    def sample(self, nEvents = None, minVal = None, maxVal = None):
 
-        return np.random.uniform(self.min, self.max, size = nEvents) # Hehehe
+        if not (minVal or maxVal) : return np.random.uniform(self.min, self.max, size = int(nEvents))
+        else : np.random.uniform(minVal, maxVal, size = int(nEvents))
 
     def integral(self, minVal, maxVal):
 
@@ -354,7 +355,7 @@ class CrystalBall(Distribution):
 
         return True
 
-    def sample(self, nEvents, minVal, maxVal):
+    def sample(self, nEvents = None, minVal = None, maxVal = None):
         sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal)
 
         return sampler.sample(nEvents)
@@ -424,7 +425,7 @@ class Exponential(Distribution):
 
         return self.norm() * np.exp(self.a * data)
 
-    def sample(self, nEvents, minVal, maxVal):
+    def sample(self, nEvents = None, minVal = None, maxVal = None):
 
         # Exponential is monotonic
         ceiling = np.max(self.prob(np.array([minVal, maxVal])))

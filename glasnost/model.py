@@ -171,10 +171,10 @@ class Model(Distribution):
         # Fill prior for ranges, doesn't depend on data
         # (Only if these ranges aren't none)
 
-        if any([y.min or y.max and (y.value_ > y.max or y.value_ < y.min) for y in self.fitYields.values()]):
+        if any([(y.min and y.value_ < y.min) or (y.max and y.value_ > y.max) for y in self.fitYields.values()]):
             return -np.inf
 
-        if any([y.min or y.max and (y.value_ > y.max or y.value_ < y.min) for y in self.fitFracs.values()]):
+        if any([(y.min and y.value_ < y.min) or (y.max and y.value_ > y.max) for y in self.fitFracs.values()]):
             return -np.inf
 
         # Use np.zeros(1) as dummy data -> won't be used anyway if it's inf (which is true for
@@ -209,13 +209,16 @@ class Model(Distribution):
         if np.isinf(lnPriors):
             return np.full_like(data, -np.inf)
 
-        # yields = list([y.value_ for y in self.fitYields.values()]) if self.fitYields else [1. for i in range(len(components))]
+        yields = list([y.value_ for y in self.fitYields.values()]) if self.fitYields else [1. for i in range(len(components))]
 
         # Call this yields, but really it can represent either yields or fracs
         yields = None
         if self.fitYields:
+
             yields = {n : y.value_ for n, y in self.fitYields.items()}
+
         elif self.fitFracs:
+
             # Get the fracs for those provided
             fracsPresent = set([c.name for c in components])
             yields = {}
@@ -232,6 +235,7 @@ class Model(Distribution):
             yields[fracsPresent.pop()] = 1. - sumFracs
 
         else:
+            # equal weight
             yields = {c.name : (1.0 / len(components)) for c in components}
 
         totalNorm = self.integral(self.min, self.max)
@@ -352,22 +356,42 @@ class Model(Distribution):
         return {name : c.integral(minVal, maxVal) for (name, c) in self.fitComponents.items()}
 
     def integral(self, minVal, maxVal):
-        return np.sum( list(self.getComponentIntegrals(minVal, maxVal).values()) )
+        # Operate on already normalised PDFs
+        return 1.0
 
-    def generate(self, minVal, maxVal):
+    def sample(self, nEvents = None, minVal = None, maxVal = None):
         # Generate according to yields and component models
         # Pass min and max ranges - ideally these would be separate for each 1D fit
 
-        if not self.fitYields:
-            print('Cannot generate from a model without specifying the fitYields (yet).')
-            exit(1)
-
-        yields = {n : y.value_ for n, y in self.fitYields.items()}
         components = list(self.fitComponents.values())
 
-        z = np.concatenate([ component.sample(yields[component.name], minVal = minVal, maxVal = maxVal) for component in components ])
+        if not self.fitYields and nEvents:
 
-        return z
+            # Construct yields from fractions and total nEvents
+
+            fracs = {n : f.value for n, f in self.fitFracs.items()}
+
+            sumOfFracs = np.sum(list(fracs.values()))
+
+            if len(fracs) != len(self.fitComponents) - 1:
+                print("Too few fracs for components!")
+
+            for component in components:
+                if component.name not in fracs:
+                    fracs[component.name] = 1. - sumOfFracs
+                    break
+
+            yields = {component.name : fracs[component.name] * nEvents for component in components}
+
+            z = np.concatenate([ component.sample(yields[component.name], minVal = minVal, maxVal = maxVal) for component in components ])
+
+            return z
+
+        else:
+
+            z = np.concatenate([ component.sample(self.fitYields[component.name].value, minVal = minVal, maxVal = maxVal) for component in components ])
+
+            return z
 
     def logL(self, params): # for emcee
 
