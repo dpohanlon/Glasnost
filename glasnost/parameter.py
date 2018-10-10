@@ -30,8 +30,13 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
         # Can envision blinding, errors, etc
 
+        self.error_ = None
+
     def __repr__(self):
-        return "%s: %s" % (self.name, self.value_)
+        if not self.error_:
+            return "%s: %s" % (self.name, self.value_)
+        else:
+            return "%s: %s +/- %s" % (self.name, self.value_, self.error_)
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         # Magic function to catch numpy array operations and decay the Parameter to the base
@@ -57,6 +62,13 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     def updateValue(self, value):
         self.value_ = value
+
+    @property
+    def error(self):
+        return self.error_
+
+    def updateError(self, error):
+        self.error_ = error
 
     @property
     def isFixed(self):

@@ -68,6 +68,18 @@ class Fitter(object):
 
             map = self.getMode(vals)
             params[name].updateValue(map)
+            params[name].updateError(np.std(vals)) # Do this for now, but in future do something better!
+
+    def postProcessMinuit(self, minimiser):
+        # Make sure that values and errors are set
+
+        paramNames = self.model.getFloatingParameterNames()
+        params = self.model.getFloatingParameters()
+
+        for name in paramNames:
+
+            params[name].updateValue(minimiser.values[name])
+            params[name].updateError(minimiser.errors[name])
 
     def fit(self, data, verbose = False,
             nIterations = 1000, # For emcee
@@ -103,6 +115,8 @@ class Fitter(object):
             sys.stdout = stdout
 
             minimiser = minuit
+
+            self.postProcessMinuit(minimiser)
 
         if self.backend in ['emcee']:
 

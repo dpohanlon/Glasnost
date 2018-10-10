@@ -29,6 +29,25 @@ import corner
 
 np.random.seed(42)
 
+def parameterPullsEval(trueParams, fittedParams):
+
+    pulls = []
+
+    for param in trueParams.keys():
+        pull = (fittedParams[param].value - trueParams[param]) / fittedParams[param].error
+        pulls.append(np.abs(pull))
+
+    return np.array(pulls)
+
+def parameterPullsOkay(trueParams, fittedParams):
+
+    pulls = parameterPullsEval(trueParams, fittedParams)
+
+    if any(pulls[pulls > 3.0]):
+        return 1
+    else:
+        return 0
+
 def simpleGaussianModel(mean, width, nEvents):
 
     with gl.name_scope('simpleGaussianTest'):
@@ -59,8 +78,16 @@ def testSimpleGaussian():
 
     plotter = gl.Plotter(model, dataGen)
     plotter.plotDataModel(nDataBins = 100)
-    plt.savefig('simpleGaussian1Test.pdf')
+    plt.savefig('simpleGaussianTest.pdf')
     plt.clf()
+
+    generatedParams = {'simpleGaussianTest/mean' : 5279.,
+                       'simpleGaussianTest/sigma' : 20,
+                       'simpleGaussianTest/gaussYield' : 1000000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testSimpleGaussianGen():
 
     # Test generating with NumPy and fitting back with a similar model
 
@@ -74,11 +101,43 @@ def testSimpleGaussian():
 
     plotter = gl.Plotter(model, dataNumpy)
     plotter.plotDataModel(nDataBins = 100)
-    plt.savefig('simpleGaussian2Test.pdf')
+    plt.savefig('simpleGaussianGenTest.pdf')
     plt.clf()
 
-    print(model)
+    generatedParams = {'simpleGaussianTest/mean' : 5279.,
+                       'simpleGaussianTest/sigma' : 20,
+                       'simpleGaussianTest/gaussYield' : 1000000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testSimpleGaussianMCMC():
+
+    # Test generating and fitting back with the same model
+
+    model = simpleGaussianModel(5279., 20., 10000.)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
+    fitter = gl.Fitter(model, backend = 'emcee')
+    res = fitter.fit(dataGen, verbose = True, nIterations = 1000, nWalkers = 10)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 30)
+    plt.savefig('simpleGaussianMCMCTest.pdf')
+    plt.clf()
+
+    fig = plt.figure(figsize = (16, 12))
+
+    samples = res.chain[:, 200:, :].reshape((-1, model.getNFloatingParameters()))
+    c = corner.corner(samples, lw = 1.0)
+    c.savefig('simpleGaussianMCMCTestCorner.pdf')
+    plt.clf()
+
+    generatedParams = {'simpleGaussianTest/mean' : 5279.,
+                       'simpleGaussianTest/sigma' : 20,
+                       'simpleGaussianTest/gaussYield' : 10000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
 if __name__ == '__main__':
 
-    simpleGaussianTests()
+    print(testSimpleGaussian())
