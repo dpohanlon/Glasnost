@@ -1,4 +1,4 @@
-Glasnost
+Glasnost [![Build Status](https://travis-ci.com/dpohanlon/Glasnost.svg?token=6U7ubPocKxuFEpjJP4aK&branch=master)](https://travis-ci.com/dpohanlon/Glasnost)
 ===
 
 Minimalist maximum likelihood fitter in (mostly) NumPy, with extensibility for Bayesian MCMC fits. Direct access to parameters hopefully simplifies simultaneous fits where parameters are shared, and additional constraints are implemented directly into the likelihood.
