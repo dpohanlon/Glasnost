@@ -72,7 +72,7 @@ class Fitter(object):
     def fit(self, data, verbose = False,
             nIterations = 1000, # For emcee
             nWalkers = 100, # For emcee
-             **kwargs):
+            ):
 
         self.model.setData(data)
 
@@ -81,7 +81,7 @@ class Fitter(object):
         if self.backend in ['minuit', 'minuit-migrad-hesse', 'minos', 'minuit-minos']:
 
             # Initialise Minuit class from iminuit
-            minuit = Minuit(self.model, errordef = 1.0, **self.model.getInitialParameterValuesAndStepSizes(), **kwargs)
+            minuit = Minuit(self.model, errordef = 1.0, **self.model.getInitialParameterValuesAndStepSizes())
 
             stdout = sys.stdout
 
