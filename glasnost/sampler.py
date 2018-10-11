@@ -17,6 +17,7 @@ class RejectionSampler(object):
         self.ceiling = ceiling
 
     def sample(self, nSamples):
+
         nSamples = int(nSamples)
         samples = []
 

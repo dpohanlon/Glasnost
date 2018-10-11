@@ -71,7 +71,7 @@ class Distribution(object):
     def integral(self, minVal, maxVal):
 
         # Might need to fiddle with the tolerance sometimes
-        int, err = integrate_adaptive(self.prob, [minVal, maxVal], 1E-3)
+        int, err = integrate_adaptive(self.prob, [minVal, maxVal], 1E-5)
 
         return int
 
@@ -335,8 +335,8 @@ class CrystalBall(Distribution):
 
         A = ( nOverA ) ** n * expA
         B = ( nOverA ) - np.abs(a)
-        C = ( nOverA ) * (1./(n - 1)) * expA
-        D = np.sqrt(0.5 * np.pi) * (1 + erf(np.abs(a) / np.sqrt(2)))
+        C = ( nOverA ) * (1./(n - 1.)) * expA
+        D = np.sqrt(0.5 * np.pi) * (1. + erf(np.abs(a) / np.sqrt(2)))
 
         N = 1./( s * (C + D) )
 
@@ -347,16 +347,25 @@ class CrystalBall(Distribution):
         # This can result in a complex number if this path isn't taken
         # Make complex and then just take the real part
         # (Check whether this is faster than just branching)
-        v2 = (N * A * (B - z)).astype(np.complex64) ** (-n)
+
+        v2 = (N * A * (B - z).astype(np.complex) ** (-n))
+        # v2 = (N * A * (B - z) ** (-n))
+
+        # print(v2, z > -a)
 
         return np.where(z > -a, v1, np.real(v2))
+
+        # if z > -a:
+        #     return v1
+        # else:
+        #     return v2
 
     def hasDefaultPrior(self):
 
         return True
 
     def sample(self, nEvents = None, minVal = None, maxVal = None):
-        sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal)
+        sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal, ceiling = self.prob(self.mean))
 
         return sampler.sample(nEvents)
 
@@ -494,5 +503,36 @@ class StudentsT(Distribution):
         return l * r
 
 if __name__ == '__main__':
+    import matplotlib as mpl
 
-    gaus = Gaussian('gaus', {'mean' : 0., 'sigma' : 1.})
+    mpl.use('Agg')
+
+    import matplotlib.pyplot as plt
+
+    plt.style.use(['fivethirtyeight', 'seaborn-whitegrid', 'seaborn-ticks'])
+
+    from matplotlib import rcParams
+    from matplotlib import gridspec
+    import matplotlib.ticker as plticker
+
+    from matplotlib import cm
+
+    rcParams['axes.facecolor'] = 'FFFFFF'
+    rcParams['savefig.facecolor'] = 'FFFFFF'
+    rcParams['xtick.direction'] = 'in'
+    rcParams['ytick.direction'] = 'in'
+
+    rcParams.update({'figure.autolayout': True})
+
+    with gl.name_scope('simpleCBTest'):
+
+        m = gl.Parameter(0, name = 'mean')
+        s = gl.Parameter(1., name = 'sigma')
+        a = gl.Parameter(0.5, name = 'a')
+        n = gl.Parameter(1.1, name = 'n')
+
+        cb = gl.CrystalBall({'mean' : m, 'sigma' : s, 'a' : a, 'n' : n})
+
+    xs = np.linspace(-10, 10, 1000)
+    plt.plot(xs, cb.prob(xs))
+    plt.savefig('cb.pdf')

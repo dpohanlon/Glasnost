@@ -238,22 +238,19 @@ class Model(Distribution):
             # equal weight
             yields = {c.name : (1.0 / len(components)) for c in components}
 
-        totalNorm = self.integral(self.min, self.max)
+        # totalNorm = self.integral(self.min, self.max)
         # norm = {n : c / totalNorm for (n, c) in self.getComponentIntegrals(self.min, self.max).items()}
         norm = {n : c for (n, c) in self.getComponentIntegrals(self.min, self.max).items()}
+        totalYield = np.sum(list(yields.values()))
 
         # z = [ (1. / norm[component.name]) * yields[component.name] * component.prob(data) for component in components ]
-        z = [ norm[component.name] * yields[component.name] * component.prob(data) for component in components ]
+        z = [ (yields[component.name] / (norm[component.name] * totalYield)) * component.prob(data) for component in components ]
 
         # Matrix of (nComponents, nData) -> uses lots of memory, rewrite using einsum?
         p = np.vstack(z)
 
         # Sum across component axis, vector of length nData
         p = np.sum(p, 0)
-
-        # normalise
-        # p *= (1. / np.sum(yields))
-        p *= (1. / np.sum(list(yields.values())))
 
         # Take log of each component, (sum over data axis to get total log-likelihood)
         p = np.log(p)
@@ -357,7 +354,10 @@ class Model(Distribution):
 
     def integral(self, minVal, maxVal):
         # Operate on already normalised PDFs
-        return 1.0
+        # Screws up normalisation over range?!?!????!?!?
+        # return 1.0
+
+        return np.sum(list(self.getComponentIntegrals(minVal, maxVal).values()))
 
     def sample(self, nEvents = None, minVal = None, maxVal = None):
         # Generate according to yields and component models

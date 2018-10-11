@@ -122,7 +122,9 @@ class Plotter(object):
         # Normalised according to the data binning also plotted
         modelToPlot *= binWidth
 
-        # f.plot(x, modelToPlot, **self.totalCurveConfig) # Doesn't work with fracs + normalisation, fix me
+        # modelToPlot /= self.model.integral(minVal, maxVal)
+
+        f.plot(x, modelToPlot, **self.totalCurveConfig) # Doesn't work with fracs + normalisation, fix me
 
         # Components
         # WOULD BE GOOD TO HAVE A POSTPROCESS STEP THAT FINALISES ALL INFORMATION INCLUDING FRACS FOR ALL COMPONENTS,
@@ -147,14 +149,14 @@ class Plotter(object):
                 if k not in yields:
                     yields[k] = totalYield * (1. - totFF)
 
-        total = []
+        # total = []
 
-        for i, (n, c) in enumerate(self.model.fitComponents.items()):
-            total.append(c.prob(x) * yields[n] * binWidth)
-            plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
+        # for i, (n, c) in enumerate(self.model.fitComponents.items()):
+            # total.append(c.prob(x) * yields[n] * binWidth)
+            # plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
 
-        total = np.sum(np.array(total), 0)
-        f.plot(x, total, **self.totalCurveConfig)
+        # total = np.sum(np.array(total), 0)
+        # f.plot(x, total, **self.totalCurve .Config)
 
         plt.ylim(ymin = 0)
         plt.xlim(minVal, maxVal)

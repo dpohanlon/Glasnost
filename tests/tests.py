@@ -66,11 +66,89 @@ def simpleGaussianModel(mean, width, nEvents):
 
     return model
 
+def doubleGaussianYieldsModel(mean1, width1, nEvents1, mean2, width2, nEvents2):
+
+    with gl.name_scope('doubleGaussianYieldsModel'):
+
+        with gl.name_scope('gauss1'):
+
+            m1 = gl.Parameter(mean1, name = 'mean', minVal = 4200, maxVal = 5700)
+            s1 = gl.Parameter(width1, name = 'sigma', minVal = 0, maxVal = width1 * 5)
+
+            gauss1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
+
+            gauss1Yield = gl.Parameter(nEvents1, name = 'gauss1Yield', minVal = 0.8 * nEvents1, maxVal = 1.2 * nEvents1)
+
+        with gl.name_scope('gauss2'):
+
+            m2 = gl.Parameter(mean2, name = 'mean', minVal = 4200, maxVal = 5700)
+            s2 = gl.Parameter(width2, name = 'sigma', minVal = 0, maxVal = width2 * 5)
+
+            gauss2 = gl.Gaussian({'mean' : m2, 'sigma' : s2})
+
+            gauss2Yield = gl.Parameter(nEvents2, name = 'gauss2Yield', minVal = 0.8 * nEvents2, maxVal = 1.2 * nEvents2)
+
+    fitYields = {gauss1.name : gauss1Yield, gauss2.name : gauss2Yield}
+    fitComponents = {gauss1.name : gauss1, gauss2.name : gauss2}
+
+    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4200, maxVal = 5700)
+
+    return model
+
+def doubleGaussianFracModel(mean1, width1, frac, mean2, width2, nEvents):
+
+    with gl.name_scope('doubleGaussianFracModel'):
+
+        with gl.name_scope('gauss1'):
+
+            m1 = gl.Parameter(mean1, name = 'mean', minVal = 4200, maxVal = 5700)
+            s1 = gl.Parameter(width1, name = 'sigma', minVal = 0, maxVal = width1 * 5)
+
+            gauss1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
+
+        with gl.name_scope('gauss2'):
+
+            m2 = gl.Parameter(mean2, name = 'mean', minVal = 4200, maxVal = 5700)
+            s2 = gl.Parameter(width2, name = 'sigma', minVal = 0, maxVal = width2 * 5)
+
+            gauss2 = gl.Gaussian({'mean' : m2, 'sigma' : s2})
+
+        gaussFrac = gl.Parameter(frac, name = 'gaussFrac', minVal = 0.0, maxVal = 1.0)
+        totalYield = gl.Parameter(nEvents, name = 'totalYield', minVal = 0.8 * nEvents, maxVal = 1.2 * nEvents)
+
+    fitComponents = {gauss1.name : gauss1, gauss2.name : gauss2}
+    doubleGaussian = gl.Model(initialFitFracs = {gauss1.name : gaussFrac}, initialFitComponents = fitComponents, minVal = 4200, maxVal = 5700)
+
+    model = gl.Model(initialFitYields = {doubleGaussian.name : totalYield}, initialFitComponents = {doubleGaussian.name : doubleGaussian}, minVal = 4200, maxVal = 5700)
+
+    return model
+
+def simpleCBModel(mean, width, aVal, nVal, nEvents):
+
+    with gl.name_scope('simpleCBTest'):
+
+        m = gl.Parameter(mean, name = 'mean', minVal = -1., maxVal = 1.)
+        s = gl.Parameter(width, name = 'sigma', minVal = 0.1 * width, maxVal = width * 2.0)
+        a = gl.Parameter(aVal, name = 'a', minVal = 0 * aVal, maxVal = 1.5 * aVal)
+        n = gl.Parameter(nVal, name = 'n', fixed = True)
+
+        cb = gl.CrystalBall({'mean' : m, 'sigma' : s, 'a' : a, 'n' : n})
+
+        cbYield = gl.Parameter(nEvents, name = 'cbYield', minVal = 0.8 * nEvents, maxVal = 1.2 * nEvents)
+
+    fitYields = {cb.name : cbYield}
+    fitComponents = {cb.name : cb}
+
+    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = -10., maxVal = 10.)
+
+    return model
+
 def testSimpleGaussian():
 
     # Test generating and fitting back with the same model
 
-    model = simpleGaussianModel(5279., 20., 1000000.)
+    # model = simpleGaussianModel(5279., 20., 1000000.)
+    model = simpleGaussianModel(4200., 20., 1000000.)
 
     dataGen = model.sample(minVal = 4200., maxVal = 5700.)
     fitter = gl.Fitter(model, backend = 'minuit')
@@ -81,7 +159,7 @@ def testSimpleGaussian():
     plt.savefig('simpleGaussianTest.pdf')
     plt.clf()
 
-    generatedParams = {'simpleGaussianTest/mean' : 5279.,
+    generatedParams = {'simpleGaussianTest/mean' : 4200.,
                        'simpleGaussianTest/sigma' : 20,
                        'simpleGaussianTest/gaussYield' : 1000000.}
 
@@ -138,6 +216,75 @@ def testSimpleGaussianMCMC():
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
+def testSimpleCB():
+
+    # Test generating and fitting back with the same model
+
+    model = simpleCBModel(0., 1., 1.0, 1.1, 100000.)
+
+    dataGen = model.sample(minVal = -10, maxVal = 10.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('simpleCBTest.pdf')
+    plt.clf()
+
+    generatedParams = {'simpleCBTest/mean' : 0.,
+                       'simpleCBTest/sigma' : 1.,
+                       'simpleCBTest/a' : 1.0,
+                       'simpleCBTest/cbYield' : 100000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testDoubleGaussianYields():
+
+    model = doubleGaussianYieldsModel(5279., 20., 50000, 5379., 20., 30000)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('doubleGaussianYieldsTest.pdf')
+    plt.clf()
+
+    generatedParams = {'doubleGaussianYieldsModel/gauss1/mean' : 5279.,
+                       'doubleGaussianYieldsModel/gauss2/mean' : 5379.,
+                       'doubleGaussianYieldsModel/gauss1/sigma' : 20.,
+                       'doubleGaussianYieldsModel/gauss2/sigma' : 20.,
+                       'doubleGaussianYieldsModel/gauss1/gauss1Yield' : 50000.,
+                       'doubleGaussianYieldsModel/gauss2/gauss2Yield' : 30000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testDoubleGaussianFrac():
+
+    model = doubleGaussianFracModel(5279., 15., 0.75, 5379., 20., 10000.)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('doubleGaussianFracTest.pdf')
+    plt.clf()
+
+    generatedParams = {'doubleGaussianFracModel/gauss1/mean' : 5279.,
+                       'doubleGaussianFracModel/gauss2/mean' : 5379.,
+                       'doubleGaussianFracModel/gauss1/sigma' : 15.,
+                       'doubleGaussianFracModel/gauss2/sigma' : 20.,
+                       'doubleGaussianFracModel/gaussFrac' : 0.75,
+                       'doubleGaussianFracModel/totalYield' : 10000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+
 if __name__ == '__main__':
 
-    print(testSimpleGaussian())
+    # print(testSimpleCB())
+    # print(testDoubleGaussianYields())
+    print(testDoubleGaussianFrac())
