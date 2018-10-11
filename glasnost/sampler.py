@@ -17,17 +17,21 @@ class RejectionSampler(object):
         self.ceiling = ceiling
 
     def sample(self, nSamples):
+        nSamples = int(nSamples)
         samples = []
+
+        blockSize = 10000
+        # Maybe instead sample all in one go? Cannot adjust ceiling on the fly
 
         while len(samples) < nSamples:
 
-            xVal = np.random.uniform(self.min, self.max)
-            fVal = self.function(xVal)
-            yVal = np.random.uniform(0, self.ceiling)
+            xVals = np.random.uniform(self.min, self.max, size = blockSize)
+            fVals = self.function(xVals)
+            yVals = np.random.uniform(0, self.ceiling, size = blockSize)
 
-            if yVal <= fVal:
-                samples.append(xVal)
-            if self.ceiling < fVal:
-                self.ceiling = fVal
+            samples.extend(list(xVals[yVals <= fVals]))
 
-        return samples
+            if len(fVals[fVals > self.ceiling]) > 0:
+                self.ceiling = np.max(fVals)
+
+        return samples[:nSamples]
