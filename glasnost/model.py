@@ -353,11 +353,8 @@ class Model(Distribution):
         return {name : c.integral(minVal, maxVal) for (name, c) in self.fitComponents.items()}
 
     def integral(self, minVal, maxVal):
-        # Operate on already normalised PDFs
-        # Screws up normalisation over range?!?!????!?!?
-        # return 1.0
 
-        return np.sum(list(self.getComponentIntegrals(minVal, maxVal).values()))
+        return np.sum(list(self.getComponentIntegrals(minVal, maxVal).values())) / len(self.getComponentIntegrals(minVal, maxVal).values())
 
     def sample(self, nEvents = None, minVal = None, maxVal = None):
         # Generate according to yields and component models

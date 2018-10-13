@@ -285,6 +285,8 @@ def testDoubleGaussianFrac():
 
 if __name__ == '__main__':
 
-    # print(testSimpleCB())
-    # print(testDoubleGaussianYields())
-    print(testDoubleGaussianFrac())
+    print(np.sum([testSimpleCB(),
+                  testDoubleGaussianYields(),
+                  testDoubleGaussianFrac(),
+                  testSimpleGaussian(),
+                  ] ))

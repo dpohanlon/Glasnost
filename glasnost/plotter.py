@@ -122,7 +122,7 @@ class Plotter(object):
         # Normalised according to the data binning also plotted
         modelToPlot *= binWidth
 
-        # modelToPlot /= self.model.integral(minVal, maxVal)
+        print('Model integral:', self.model.integral(minVal, maxVal))
 
         f.plot(x, modelToPlot, **self.totalCurveConfig) # Doesn't work with fracs + normalisation, fix me
 

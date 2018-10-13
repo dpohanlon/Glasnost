@@ -349,16 +349,8 @@ class CrystalBall(Distribution):
         # (Check whether this is faster than just branching)
 
         v2 = (N * A * (B - z).astype(np.complex) ** (-n))
-        # v2 = (N * A * (B - z) ** (-n))
-
-        # print(v2, z > -a)
 
         return np.where(z > -a, v1, np.real(v2))
-
-        # if z > -a:
-        #     return v1
-        # else:
-        #     return v2
 
     def hasDefaultPrior(self):
 
@@ -501,38 +493,3 @@ class StudentsT(Distribution):
         r = (1. + ((data - self.mean) / self.sigma) ** 2 / self.nu) ** (-0.5 * (self.nu + 1.))
 
         return l * r
-
-if __name__ == '__main__':
-    import matplotlib as mpl
-
-    mpl.use('Agg')
-
-    import matplotlib.pyplot as plt
-
-    plt.style.use(['fivethirtyeight', 'seaborn-whitegrid', 'seaborn-ticks'])
-
-    from matplotlib import rcParams
-    from matplotlib import gridspec
-    import matplotlib.ticker as plticker
-
-    from matplotlib import cm
-
-    rcParams['axes.facecolor'] = 'FFFFFF'
-    rcParams['savefig.facecolor'] = 'FFFFFF'
-    rcParams['xtick.direction'] = 'in'
-    rcParams['ytick.direction'] = 'in'
-
-    rcParams.update({'figure.autolayout': True})
-
-    with gl.name_scope('simpleCBTest'):
-
-        m = gl.Parameter(0, name = 'mean')
-        s = gl.Parameter(1., name = 'sigma')
-        a = gl.Parameter(0.5, name = 'a')
-        n = gl.Parameter(1.1, name = 'n')
-
-        cb = gl.CrystalBall({'mean' : m, 'sigma' : s, 'a' : a, 'n' : n})
-
-    xs = np.linspace(-10, 10, 1000)
-    plt.plot(xs, cb.prob(xs))
-    plt.savefig('cb.pdf')
