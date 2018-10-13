@@ -64,7 +64,7 @@ class Plotter(object):
 
         return nBins
 
-    def plotData(self, nDataBins = None, minVal = None, maxVal = None, fig = False, ax = None, **kwargs):
+    def plotData(self, nDataBins = None, minVal = None, maxVal = None, fig = False, ax = None, log = False, **kwargs):
 
         minVal = minVal if minVal else np.min(self.data)
         maxVal = maxVal if maxVal else np.max(self.data)
@@ -86,12 +86,14 @@ class Plotter(object):
 
         f.errorbar(binEdges, binnedData, xerr = dataXErrs, yerr = dataYErrs, **self.errorbarConfig)
 
-        plt.ylim(ymin = 0)
+        if log : f.yscale("log", nonposx='clip')
+        else : plt.ylim(ymin = 0)
+        
         plt.xlim(minVal, maxVal)
 
         return
 
-    def plotModel(self, minVal = None, maxVal = None, fig = False, nSamples = 1000, ax = None, **kwargs):
+    def plotModel(self, minVal = None, maxVal = None, fig = False, nSamples = 1000, ax = None, log = False, **kwargs):
 
         minVal = minVal if minVal else np.min(self.data)
         maxVal = maxVal if maxVal else np.max(self.data)
@@ -152,7 +154,9 @@ class Plotter(object):
             for i, (n, c) in enumerate(self.model.fitComponents.items()):
                 plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
 
-        plt.ylim(ymin = 0)
+        if log : f.yscale("log", nonposx='clip')
+        else : plt.ylim(ymin = 0)
+
         plt.xlim(minVal, maxVal)
 
         return fig, ax

@@ -486,6 +486,11 @@ class StudentsT(Distribution):
 
         return self.parameters[self.sigmaParamName]
 
+    def sample(self, nEvents = None, minVal = None, maxVal = None):
+        sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal, ceiling = self.prob(self.mean))
+
+        return sampler.sample(nEvents)
+
     def prob(self, data):
 
         # Slightly faster and simpler than gamma definition

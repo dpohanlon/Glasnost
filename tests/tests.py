@@ -66,6 +66,25 @@ def simpleGaussianModel(mean, width, nEvents):
 
     return model
 
+def studentsTModel(mean, width, nu, nEvents):
+
+    with gl.name_scope('studentsTTest'):
+
+        m = gl.Parameter(mean, name = 'mean', minVal = 5000, maxVal = 5600)
+        s = gl.Parameter(width, name = 'sigma', minVal = 0, maxVal = width * 5)
+        n = gl.Parameter(nu, name = 'nu', minVal = 0, maxVal = nu * 3)
+
+        studentsT = gl.StudentsT({'mean' : m, 'sigma' : s, 'nu' : n})
+
+        studentsTYield = gl.Parameter(nEvents, name = 'studentsTYield', minVal = 0.8 * nEvents, maxVal = 1.2 * nEvents)
+
+    fitYields = {studentsT.name : studentsTYield}
+    fitComponents = {studentsT.name : studentsT}
+
+    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 5000, maxVal = 5600)
+
+    return model
+
 def simpleGaussianWithExpModel(mean, width, a, nEventsGauss, nEventsExp):
 
     with gl.name_scope('simpleGaussianWithExpTest'):
@@ -196,6 +215,26 @@ def testSimpleGaussian():
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
+def testStudentsT():
+
+    model = studentsTModel(5279., 20., 1.5, 1000000.)
+
+    dataGen = model.sample(minVal = 5000., maxVal = 5600.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 400, log = True)
+    plt.savefig('studentsTTest.pdf')
+    plt.clf()
+
+    generatedParams = {'studentsTTest/mean' : 5279.,
+                       'studentsTTest/sigma' : 20,
+                       'studentsTTest/nu' : 1.5,
+                       'studentsTTest/studentsTYield' : 1000000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
 def testSimpleGaussianWithExp():
 
     # Test generating and fitting back with the same model
@@ -208,8 +247,6 @@ def testSimpleGaussianWithExp():
 
     plotter = gl.Plotter(model, dataGen)
     plotter.plotDataModel(nDataBins = 300)
-    # plotter = gl.Plotter(data = dataGen)
-    # plotter.plotData(nDataBins = 300)
     plt.savefig('simpleGaussianWithExpTest.pdf')
     plt.clf()
 
@@ -341,10 +378,11 @@ def testDoubleGaussianFrac():
 
 if __name__ == '__main__':
 
-    print(np.sum([testSimpleCB(),
-                  testDoubleGaussianYields(),
-                  testDoubleGaussianFrac(),
-                  testSimpleGaussian(),
-                  ] ))
+    # print(np.sum([testSimpleCB(),
+    #               testDoubleGaussianYields(),
+    #               testDoubleGaussianFrac(),
+    #               testSimpleGaussian(),
+    #               testSimpleGaussianWithExp(),
+    #               ] ))
 
-    # print(testSimpleGaussianWithExp())
+    print(testStudentsT())
