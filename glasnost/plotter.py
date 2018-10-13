@@ -86,9 +86,9 @@ class Plotter(object):
 
         f.errorbar(binEdges, binnedData, xerr = dataXErrs, yerr = dataYErrs, **self.errorbarConfig)
 
-        if log : f.yscale("log", nonposx='clip')
+        if log : f.yscale("log", nonposy='clip')
         else : plt.ylim(ymin = 0)
-        
+
         plt.xlim(minVal, maxVal)
 
         return
@@ -154,7 +154,7 @@ class Plotter(object):
             for i, (n, c) in enumerate(self.model.fitComponents.items()):
                 plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
 
-        if log : f.yscale("log", nonposx='clip')
+        if log : f.yscale("log", nonposy='clip')
         else : plt.ylim(ymin = 0)
 
         plt.xlim(minVal, maxVal)
