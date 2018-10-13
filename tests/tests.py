@@ -66,6 +66,37 @@ def simpleGaussianModel(mean, width, nEvents):
 
     return model
 
+def simpleGaussianWithExpModel(mean, width, a, nEventsGauss, nEventsExp):
+
+    with gl.name_scope('simpleGaussianWithExpTest'):
+
+        with gl.name_scope('gauss'):
+
+            m = gl.Parameter(mean, name = 'mean', minVal = 4200, maxVal = 6000)
+            s = gl.Parameter(width, name = 'sigma', minVal = 0, maxVal = width * 5)
+
+            gauss = gl.Gaussian({'mean' : m, 'sigma' : s})
+
+        with gl.name_scope('exp'):
+
+            # Maybe have a global scope for these, if not otherwise specified
+            min = gl.Parameter(4200., name = 'min', fixed = True)
+            max = gl.Parameter(6000., name = 'max', fixed = True)
+
+            aExp = gl.Parameter(a, name = 'a', minVal = -0.05, maxVal = -0.0001)
+
+            exp = gl.Exponential({'a' : aExp, 'min' : min, 'max' : max})
+
+        gaussYield = gl.Parameter(nEventsGauss, name = 'gaussYield', minVal = 0.8 * nEventsGauss, maxVal = 1.2 * nEventsGauss)
+        expYield = gl.Parameter(nEventsExp, name = 'expYield', minVal = 0.8 * nEventsExp, maxVal = 1.2 * nEventsExp)
+
+    fitYields = {gauss.name : gaussYield, exp.name : expYield}
+    fitComponents = {gauss.name : gauss, exp.name : exp}
+
+    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4200, maxVal = 6000)
+
+    return model
+
 def doubleGaussianYieldsModel(mean1, width1, nEvents1, mean2, width2, nEvents2):
 
     with gl.name_scope('doubleGaussianYieldsModel'):
@@ -162,6 +193,31 @@ def testSimpleGaussian():
     generatedParams = {'simpleGaussianTest/mean' : 4200.,
                        'simpleGaussianTest/sigma' : 20,
                        'simpleGaussianTest/gaussYield' : 1000000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testSimpleGaussianWithExp():
+
+    # Test generating and fitting back with the same model
+
+    model = simpleGaussianWithExpModel(5279., 150., -0.002, 1000000., 2000000.)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 6000.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 300)
+    # plotter = gl.Plotter(data = dataGen)
+    # plotter.plotData(nDataBins = 300)
+    plt.savefig('simpleGaussianWithExpTest.pdf')
+    plt.clf()
+
+    generatedParams = {'simpleGaussianWithExpTest/gauss/mean' : 5279.,
+                       'simpleGaussianWithExpTest/gauss/sigma' : 150,
+                       'simpleGaussianWithExpTest/exp/a' : -0.002,
+                       'simpleGaussianWithExpTest/expYield' : 2000000.,
+                       'simpleGaussianWithExpTest/gaussYield' : 1000000.}
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
@@ -290,3 +346,5 @@ if __name__ == '__main__':
                   testDoubleGaussianFrac(),
                   testSimpleGaussian(),
                   ] ))
+
+    # print(testSimpleGaussianWithExp())

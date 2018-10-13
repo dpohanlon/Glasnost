@@ -122,8 +122,6 @@ class Plotter(object):
         # Normalised according to the data binning also plotted
         modelToPlot *= binWidth
 
-        print('Model integral:', self.model.integral(minVal, maxVal))
-
         f.plot(x, modelToPlot, **self.totalCurveConfig) # Doesn't work with fracs + normalisation, fix me
 
         # Components
@@ -149,27 +147,23 @@ class Plotter(object):
                 if k not in yields:
                     yields[k] = totalYield * (1. - totFF)
 
-        # total = []
+        if len(self.model.fitComponents.keys()) > 1:
 
-        # for i, (n, c) in enumerate(self.model.fitComponents.items()):
-            # total.append(c.prob(x) * yields[n] * binWidth)
-            # plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
-
-        # total = np.sum(np.array(total), 0)
-        # f.plot(x, total, **self.totalCurve .Config)
+            for i, (n, c) in enumerate(self.model.fitComponents.items()):
+                plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
 
         plt.ylim(ymin = 0)
         plt.xlim(minVal, maxVal)
 
         return fig, ax
 
-        # yields = list(self.model.fitYields.values())[1:]
-        # for i, c in enumerate(list(self.model.fitComponents.values())[1:]):
-        #     f.fill_between(x, 0, c.prob(x) * yields[i] * binWidth, color = colours[i])
+        # yields = list(self.model.fitYields.values())[0:]
+        # for i, c in enumerate(list(self.model.fitComponents.values())[0:]):
+            # f.fill_between(x, 0, c.prob(x) * yields[i] * binWidth, color = colours[i])
 
         # plt.ylim(ymin = 0)
         # plt.xlim(minVal, maxVal)
-        #
+
         # return
 
     def plotDataModel(self, **kwargs):
