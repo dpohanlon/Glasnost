@@ -116,6 +116,35 @@ def simpleGaussianWithExpModel(mean, width, a, nEventsGauss, nEventsExp):
 
     return model
 
+def simpleGaussianWithUniformModel(mean, width, nEventsGauss, nEventsUni):
+
+    with gl.name_scope('simpleGaussianWithUniformTest'):
+
+        with gl.name_scope('gauss'):
+
+            m = gl.Parameter(mean, name = 'mean', minVal = 4200, maxVal = 6000)
+            s = gl.Parameter(width, name = 'sigma', minVal = 0, maxVal = width * 5)
+
+            gauss = gl.Gaussian({'mean' : m, 'sigma' : s})
+
+        with gl.name_scope('uni'):
+
+            # Maybe have a global scope for these, if not otherwise specified
+            min = gl.Parameter(4200., name = 'min', fixed = True)
+            max = gl.Parameter(6000., name = 'max', fixed = True)
+
+            uni = gl.Uniform({'min' : min, 'max' : max})
+
+        gaussYield = gl.Parameter(nEventsGauss, name = 'gaussYield', minVal = 0.8 * nEventsGauss, maxVal = 1.2 * nEventsGauss)
+        uniYield = gl.Parameter(nEventsUni, name = 'uniYield', minVal = 0.8 * nEventsUni, maxVal = 1.2 * nEventsUni)
+
+    fitYields = {gauss.name : gaussYield, uni.name : uniYield}
+    fitComponents = {gauss.name : gauss, uni.name : uni}
+
+    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4200., maxVal = 6000.)
+
+    return model
+
 def doubleGaussianYieldsModel(mean1, width1, nEvents1, mean2, width2, nEvents2):
 
     with gl.name_scope('doubleGaussianYieldsModel'):
@@ -142,6 +171,42 @@ def doubleGaussianYieldsModel(mean1, width1, nEvents1, mean2, width2, nEvents2):
     fitComponents = {gauss1.name : gauss1, gauss2.name : gauss2}
 
     model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4200, maxVal = 5700)
+
+    return model
+
+def simultaneousGaussiansModel(mean1, width1, nEvents1, width2, nEvents2):
+
+    with gl.name_scope('simultaneousGaussiansModel'):
+
+        m1 = gl.Parameter(mean1, name = 'mean', minVal = 4200, maxVal = 5700)
+
+        with gl.name_scope('gauss1'):
+
+            s1 = gl.Parameter(width1, name = 'sigma', minVal = 0, maxVal = width1 * 5)
+
+            gauss1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
+
+            gauss1Yield = gl.Parameter(nEvents1, name = 'gauss1Yield', minVal = 0.8 * nEvents1, maxVal = 1.2 * nEvents1)
+
+        with gl.name_scope('gauss2'):
+
+            s2 = gl.Parameter(width2, name = 'sigma', minVal = 0, maxVal = width2 * 5)
+
+            gauss2 = gl.Gaussian({'mean' : m1, 'sigma' : s2})
+
+            gauss2Yield = gl.Parameter(nEvents2, name = 'gauss2Yield', minVal = 0.8 * nEvents2, maxVal = 1.2 * nEvents2)
+
+    fitYields1 = {gauss1.name : gauss1Yield}
+    fitComponents1 = {gauss1.name : gauss1}
+
+    model1 = gl.Model(initialFitYields = fitYields1, initialFitComponents = fitComponents1, minVal = 4200, maxVal = 5700)
+
+    fitYields2 = {gauss2.name : gauss2Yield}
+    fitComponents2 = {gauss2.name : gauss2}
+
+    model2 = gl.Model(initialFitYields = fitYields2, initialFitComponents = fitComponents2, minVal = 4200, maxVal = 5700)
+
+    model = gl.SimultaneousModel(initialFitComponents = [model1, model2])
 
     return model
 
@@ -258,6 +323,26 @@ def testSimpleGaussianWithExp():
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
+def testSimpleGaussianWithUniform():
+
+    model = simpleGaussianWithUniformModel(5279., 150., 1000000., 2000000.)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 6000.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 300)
+    plt.savefig('simpleGaussianWithUniformTest.pdf')
+    plt.clf()
+
+    generatedParams = {'simpleGaussianWithUniformTest/gauss/mean' : 5279.,
+                       'simpleGaussianWithUniformTest/gauss/sigma' : 150,
+                       'simpleGaussianWithUniformTest/uniYield' : 2000000.,
+                       'simpleGaussianWithUniformTest/gaussYield' : 1000000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
 def testSimpleGaussianGen():
 
     # Test generating with NumPy and fitting back with a similar model
@@ -331,6 +416,27 @@ def testSimpleCB():
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
+def testSimultaneousGaussians():
+
+    model = simultaneousGaussiansModel(5279., 15., 50000, 30., 30000)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    # plotter = gl.Plotter(model, dataGen)
+    # plotter.plotDataModel(nDataBins = 100)
+    # plt.savefig('simultaneousGaussiansTest.pdf')
+    # plt.clf()
+
+    generatedParams = {'simultaneousGaussiansModel/mean' : 5279.,
+                       'simultaneousGaussiansModel/gauss1/sigma' : 15.,
+                       'simultaneousGaussiansModel/gauss2/sigma' : 30.,
+                       'simultaneousGaussiansModel/gauss1/gauss1Yield' : 50000.,
+                       'simultaneousGaussiansModel/gauss2/gauss2Yield' : 30000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
 def testDoubleGaussianYields():
 
     model = doubleGaussianYieldsModel(5279., 20., 50000, 5379., 20., 30000)
@@ -385,4 +491,6 @@ if __name__ == '__main__':
     #               testSimpleGaussianWithExp(),
     #               ] ))
 
-    print(testStudentsT())
+    # print(testSimpleGaussianWithUniform())
+    # print(testSimpleGaussianWithExp())
+    print(testSimultaneousGaussians())

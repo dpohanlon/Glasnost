@@ -350,6 +350,7 @@ class Model(Distribution):
         return out
 
     def getComponentIntegrals(self, minVal, maxVal):
+
         return {name : c.integral(minVal, maxVal) for (name, c) in self.fitComponents.items()}
 
     def integral(self, minVal, maxVal):
@@ -359,6 +360,11 @@ class Model(Distribution):
     def sample(self, nEvents = None, minVal = None, maxVal = None):
         # Generate according to yields and component models
         # Pass min and max ranges - ideally these would be separate for each 1D fit
+
+        if not nEvents and self.fitYields:
+            # Set this to be the sum of the componentwise fit yields (useful for simultaneous fits)
+
+            nEvents = np.sum([y.value_ for y in self.fitYields.values()])
 
         components = list(self.fitComponents.values())
 
@@ -380,13 +386,13 @@ class Model(Distribution):
 
             yields = {component.name : fracs[component.name] * nEvents for component in components}
 
-            z = np.concatenate([ component.sample(yields[component.name], minVal = minVal, maxVal = maxVal) for component in components ])
+            z = np.concatenate([ component.sample(nEvents = yields[component.name], minVal = minVal, maxVal = maxVal) for component in components ])
 
             return z
 
         else:
 
-            z = np.concatenate([ component.sample(self.fitYields[component.name].value, minVal = minVal, maxVal = maxVal) for component in components ])
+            z = np.concatenate([ component.sample(nEvents = self.fitYields[component.name].value, minVal = minVal, maxVal = maxVal) for component in components ])
 
             return z
 

@@ -165,7 +165,11 @@ class Gaussian(Distribution):
 
         return True
 
-    def sample(self, nEvents = None, minVal = None, maxVal = None):
+    def sample(self, sentinel = None, nEvents = None, minVal = None, maxVal = None):
+
+        if sentinel != None:
+            print('Sentinel in sample %s' %(self.name))
+            exit(0)
 
         integral = self.integral(minVal, maxVal)
 
@@ -243,7 +247,10 @@ class Uniform(Distribution):
         min = self.min
         max = self.max
 
-        return 1. / (max - min)
+        p = np.full_like(data, 1. / (max - min))
+        p[(data < min) | (data > max)] = 0.
+
+        return p
 
     def hasDefaultPrior(self):
 
@@ -251,8 +258,8 @@ class Uniform(Distribution):
 
     def sample(self, nEvents = None, minVal = None, maxVal = None):
 
-        if not (minVal or maxVal) : return np.random.uniform(self.min, self.max, size = int(nEvents))
-        else : np.random.uniform(minVal, maxVal, size = int(nEvents))
+        if not (minVal and maxVal) : return np.random.uniform(self.min, self.max, size = int(nEvents))
+        else : return np.random.uniform(minVal, maxVal, size = int(nEvents))
 
     def integral(self, minVal, maxVal):
 
@@ -269,15 +276,11 @@ class Uniform(Distribution):
 
     def prior(self, data):
 
-        p = 0.0 if (any(data > self.max) or any(data < self.min)) else 1.0
-
-        return p * np.ones(data.shape)
+        return np.full_like(data, 1.0)
 
     def lnprior(self, data):
 
-        p = -np.inf if (any(data > self.max) or any(data < self.min)) else 0.0
-
-        return p * np.ones(data.shape)
+        return np.full_like(data, 0.0)
 
 class CrystalBall(Distribution):
 
