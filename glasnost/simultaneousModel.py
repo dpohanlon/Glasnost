@@ -47,20 +47,32 @@ class SimultaneousModel(Model):
 
     def getFloatingParameterValues(self):
 
-        values = {}
+        values = {v.name : v.value for v in self.getFloatingParameters().values()}
+
+        return values
+
+    def getFloatingParameters(self):
+
+        params = {}
 
         for c in self.fitComponentsSimultaneous:
             for v in c.getParameters().values():
-                values[v.name] = v.value
+                params[v.name] = v
 
-        return values
+        return params
 
     def parameterRangeLnPriors(self):
 
         return 0 # Simultaneous, handled by the sub-models
 
-    def generate(self, minVal, maxVal):
-        z = [c.generate(minVal, maxVal) for c in self.fitComponentsSimultaneous]
+    def sample(self, sentinel = None, nEvents = None, minVal = None, maxVal = None):
+
+        if nEvents != None:
+
+            print('Simultaneous model not configured for generating with yields')
+            exit(1)
+
+        z = [c.sample(minVal = minVal, maxVal = maxVal) for c in self.fitComponentsSimultaneous]
 
         return z
 

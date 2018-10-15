@@ -199,14 +199,14 @@ def simultaneousGaussiansModel(mean1, width1, nEvents1, width2, nEvents2):
     fitYields1 = {gauss1.name : gauss1Yield}
     fitComponents1 = {gauss1.name : gauss1}
 
-    model1 = gl.Model(initialFitYields = fitYields1, initialFitComponents = fitComponents1, minVal = 4200, maxVal = 5700)
+    model1 = gl.Model(name = 's1', initialFitYields = fitYields1, initialFitComponents = fitComponents1, minVal = 4200, maxVal = 5700)
 
     fitYields2 = {gauss2.name : gauss2Yield}
     fitComponents2 = {gauss2.name : gauss2}
 
-    model2 = gl.Model(initialFitYields = fitYields2, initialFitComponents = fitComponents2, minVal = 4200, maxVal = 5700)
+    model2 = gl.Model(name = 's2', initialFitYields = fitYields2, initialFitComponents = fitComponents2, minVal = 4200, maxVal = 5700)
 
-    model = gl.SimultaneousModel(initialFitComponents = [model1, model2])
+    model = gl.SimultaneousModel(name = 's', initialFitComponents = [model1, model2])
 
     return model
 
@@ -258,163 +258,163 @@ def simpleCBModel(mean, width, aVal, nVal, nEvents):
 
     return model
 
-# def testSimpleGaussian():
-#
-#     # Test generating and fitting back with the same model
-#
-#     # model = simpleGaussianModel(5279., 20., 1000000.)
-#     model = simpleGaussianModel(4200., 20., 1000000.)
-#
-#     dataGen = model.sample(minVal = 4200., maxVal = 5700.)
-#     fitter = gl.Fitter(model, backend = 'minuit')
-#     res = fitter.fit(dataGen, verbose = True)
-#
-#     plotter = gl.Plotter(model, dataGen)
-#     plotter.plotDataModel(nDataBins = 100)
-#     plt.savefig('simpleGaussianTest.pdf')
-#     plt.clf()
-#
-#     generatedParams = {'simpleGaussianTest/mean' : 4200.,
-#                        'simpleGaussianTest/sigma' : 20,
-#                        'simpleGaussianTest/gaussYield' : 1000000.}
-#
-#     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
-#
-# def testStudentsT():
-#
-#     model = studentsTModel(5279., 20., 1.5, 1000000.)
-#
-#     dataGen = model.sample(minVal = 5000., maxVal = 5600.)
-#     fitter = gl.Fitter(model, backend = 'minuit')
-#     res = fitter.fit(dataGen, verbose = True)
-#
-#     plotter = gl.Plotter(model, dataGen)
-#     plotter.plotDataModel(nDataBins = 400, log = True)
-#     plt.savefig('studentsTTest.pdf')
-#     plt.clf()
-#
-#     generatedParams = {'studentsTTest/mean' : 5279.,
-#                        'studentsTTest/sigma' : 20,
-#                        'studentsTTest/nu' : 1.5,
-#                        'studentsTTest/studentsTYield' : 1000000.}
-#
-#     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
-#
-# def testSimpleGaussianWithExp():
-#
-#     # Test generating and fitting back with the same model
-#
-#     model = simpleGaussianWithExpModel(5279., 150., -0.002, 1000000., 2000000.)
-#
-#     dataGen = model.sample(minVal = 4200., maxVal = 6000.)
-#     fitter = gl.Fitter(model, backend = 'minuit')
-#     res = fitter.fit(dataGen, verbose = True)
-#
-#     plotter = gl.Plotter(model, dataGen)
-#     plotter.plotDataModel(nDataBins = 300)
-#     plt.savefig('simpleGaussianWithExpTest.pdf')
-#     plt.clf()
-#
-#     generatedParams = {'simpleGaussianWithExpTest/gauss/mean' : 5279.,
-#                        'simpleGaussianWithExpTest/gauss/sigma' : 150,
-#                        'simpleGaussianWithExpTest/exp/a' : -0.002,
-#                        'simpleGaussianWithExpTest/expYield' : 2000000.,
-#                        'simpleGaussianWithExpTest/gaussYield' : 1000000.}
-#
-#     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
-#
-# def testSimpleGaussianWithUniform():
-#
-#     model = simpleGaussianWithUniformModel(5279., 150., 1000000., 2000000.)
-#
-#     dataGen = model.sample(minVal = 4200., maxVal = 6000.)
-#     fitter = gl.Fitter(model, backend = 'minuit')
-#     res = fitter.fit(dataGen, verbose = True)
-#
-#     plotter = gl.Plotter(model, dataGen)
-#     plotter.plotDataModel(nDataBins = 300)
-#     plt.savefig('simpleGaussianWithUniformTest.pdf')
-#     plt.clf()
-#
-#     generatedParams = {'simpleGaussianWithUniformTest/gauss/mean' : 5279.,
-#                        'simpleGaussianWithUniformTest/gauss/sigma' : 150,
-#                        'simpleGaussianWithUniformTest/uniYield' : 2000000.,
-#                        'simpleGaussianWithUniformTest/gaussYield' : 1000000.}
-#
-#     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
-#
-# def testSimpleGaussianGen():
-#
-#     # Test generating with NumPy and fitting back with a similar model
-#
-#     model = simpleGaussianModel(5270., 23., 1050000.) # Similar enough to what is generated
-#
-#     dataNumpy = np.random.normal(5279, 20, 1000000)
-#     dataNumpy = dataNumpy[(dataNumpy > 4200) & (dataNumpy < 5700)]
-#
-#     fitter = gl.Fitter(model, backend = 'minuit')
-#     res = fitter.fit(dataNumpy, verbose = True)
-#
-#     plotter = gl.Plotter(model, dataNumpy)
-#     plotter.plotDataModel(nDataBins = 100)
-#     plt.savefig('simpleGaussianGenTest.pdf')
-#     plt.clf()
-#
-#     generatedParams = {'simpleGaussianTest/mean' : 5279.,
-#                        'simpleGaussianTest/sigma' : 20,
-#                        'simpleGaussianTest/gaussYield' : 1000000.}
-#
-#     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
-#
-# def testSimpleGaussianMCMC():
-#
-#     # Test generating and fitting back with the same model
-#
-#     model = simpleGaussianModel(5279., 20., 10000.)
-#
-#     dataGen = model.sample(minVal = 4200., maxVal = 5700.)
-#     fitter = gl.Fitter(model, backend = 'emcee')
-#     res = fitter.fit(dataGen, verbose = True, nIterations = 1000, nWalkers = 10)
-#
-#     plotter = gl.Plotter(model, dataGen)
-#     plotter.plotDataModel(nDataBins = 30)
-#     plt.savefig('simpleGaussianMCMCTest.pdf')
-#     plt.clf()
-#
-#     fig = plt.figure(figsize = (16, 12))
-#
-#     samples = res.chain[:, 200:, :].reshape((-1, model.getNFloatingParameters()))
-#     c = corner.corner(samples, lw = 1.0)
-#     c.savefig('simpleGaussianMCMCTestCorner.pdf')
-#     plt.clf()
-#
-#     generatedParams = {'simpleGaussianTest/mean' : 5279.,
-#                        'simpleGaussianTest/sigma' : 20,
-#                        'simpleGaussianTest/gaussYield' : 10000.}
-#
-#     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
-#
-# def testSimpleCB():
-#
-#     # Test generating and fitting back with the same model
-#
-#     model = simpleCBModel(0., 1., 1.0, 1.1, 100000.)
-#
-#     dataGen = model.sample(minVal = -10, maxVal = 10.)
-#     fitter = gl.Fitter(model, backend = 'minuit')
-#     res = fitter.fit(dataGen, verbose = True)
-#
-#     plotter = gl.Plotter(model, dataGen)
-#     plotter.plotDataModel(nDataBins = 100)
-#     plt.savefig('simpleCBTest.pdf')
-#     plt.clf()
-#
-#     generatedParams = {'simpleCBTest/mean' : 0.,
-#                        'simpleCBTest/sigma' : 1.,
-#                        'simpleCBTest/a' : 1.0,
-#                        'simpleCBTest/cbYield' : 100000.}
-#
-#     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+def testSimpleGaussian():
+
+    # Test generating and fitting back with the same model
+
+    # model = simpleGaussianModel(5279., 20., 1000000.)
+    model = simpleGaussianModel(4200., 20., 1000000.)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('simpleGaussianTest.pdf')
+    plt.clf()
+
+    generatedParams = {'simpleGaussianTest/mean' : 4200.,
+                       'simpleGaussianTest/sigma' : 20,
+                       'simpleGaussianTest/gaussYield' : 1000000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testStudentsT():
+
+    model = studentsTModel(5279., 20., 1.5, 1000000.)
+
+    dataGen = model.sample(minVal = 5000., maxVal = 5600.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 400, log = True)
+    plt.savefig('studentsTTest.pdf')
+    plt.clf()
+
+    generatedParams = {'studentsTTest/mean' : 5279.,
+                       'studentsTTest/sigma' : 20,
+                       'studentsTTest/nu' : 1.5,
+                       'studentsTTest/studentsTYield' : 1000000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testSimpleGaussianWithExp():
+
+    # Test generating and fitting back with the same model
+
+    model = simpleGaussianWithExpModel(5279., 150., -0.002, 1000000., 2000000.)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 6000.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 300)
+    plt.savefig('simpleGaussianWithExpTest.pdf')
+    plt.clf()
+
+    generatedParams = {'simpleGaussianWithExpTest/gauss/mean' : 5279.,
+                       'simpleGaussianWithExpTest/gauss/sigma' : 150,
+                       'simpleGaussianWithExpTest/exp/a' : -0.002,
+                       'simpleGaussianWithExpTest/expYield' : 2000000.,
+                       'simpleGaussianWithExpTest/gaussYield' : 1000000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testSimpleGaussianWithUniform():
+
+    model = simpleGaussianWithUniformModel(5279., 150., 1000000., 2000000.)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 6000.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 300)
+    plt.savefig('simpleGaussianWithUniformTest.pdf')
+    plt.clf()
+
+    generatedParams = {'simpleGaussianWithUniformTest/gauss/mean' : 5279.,
+                       'simpleGaussianWithUniformTest/gauss/sigma' : 150,
+                       'simpleGaussianWithUniformTest/uniYield' : 2000000.,
+                       'simpleGaussianWithUniformTest/gaussYield' : 1000000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testSimpleGaussianGen():
+
+    # Test generating with NumPy and fitting back with a similar model
+
+    model = simpleGaussianModel(5270., 23., 1050000.) # Similar enough to what is generated
+
+    dataNumpy = np.random.normal(5279, 20, 1000000)
+    dataNumpy = dataNumpy[(dataNumpy > 4200) & (dataNumpy < 5700)]
+
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataNumpy, verbose = True)
+
+    plotter = gl.Plotter(model, dataNumpy)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('simpleGaussianGenTest.pdf')
+    plt.clf()
+
+    generatedParams = {'simpleGaussianTest/mean' : 5279.,
+                       'simpleGaussianTest/sigma' : 20,
+                       'simpleGaussianTest/gaussYield' : 1000000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testSimpleGaussianMCMC():
+
+    # Test generating and fitting back with the same model
+
+    model = simpleGaussianModel(5279., 20., 10000.)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
+    fitter = gl.Fitter(model, backend = 'emcee')
+    res = fitter.fit(dataGen, verbose = True, nIterations = 1000, nWalkers = 10)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 30)
+    plt.savefig('simpleGaussianMCMCTest.pdf')
+    plt.clf()
+
+    fig = plt.figure(figsize = (16, 12))
+
+    samples = res.chain[:, 200:, :].reshape((-1, model.getNFloatingParameters()))
+    c = corner.corner(samples, lw = 1.0)
+    c.savefig('simpleGaussianMCMCTestCorner.pdf')
+    plt.clf()
+
+    generatedParams = {'simpleGaussianTest/mean' : 5279.,
+                       'simpleGaussianTest/sigma' : 20,
+                       'simpleGaussianTest/gaussYield' : 10000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testSimpleCB():
+
+    # Test generating and fitting back with the same model
+
+    model = simpleCBModel(0., 1., 1.0, 1.1, 100000.)
+
+    dataGen = model.sample(minVal = -10, maxVal = 10.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('simpleCBTest.pdf')
+    plt.clf()
+
+    generatedParams = {'simpleCBTest/mean' : 0.,
+                       'simpleCBTest/sigma' : 1.,
+                       'simpleCBTest/a' : 1.0,
+                       'simpleCBTest/cbYield' : 100000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
 def testSimultaneousGaussians():
 
@@ -437,50 +437,49 @@ def testSimultaneousGaussians():
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
-# def testDoubleGaussianYields():
-#
-#     model = doubleGaussianYieldsModel(5279., 20., 50000, 5379., 20., 30000)
-#
-#     dataGen = model.sample(minVal = 4200., maxVal = 5700.)
-#     fitter = gl.Fitter(model, backend = 'minuit')
-#     res = fitter.fit(dataGen, verbose = True)
-#
-#     plotter = gl.Plotter(model, dataGen)
-#     plotter.plotDataModel(nDataBins = 100)
-#     plt.savefig('doubleGaussianYieldsTest.pdf')
-#     plt.clf()
-#
-#     generatedParams = {'doubleGaussianYieldsModel/gauss1/mean' : 5279.,
-#                        'doubleGaussianYieldsModel/gauss2/mean' : 5379.,
-#                        'doubleGaussianYieldsModel/gauss1/sigma' : 20.,
-#                        'doubleGaussianYieldsModel/gauss2/sigma' : 20.,
-#                        'doubleGaussianYieldsModel/gauss1/gauss1Yield' : 50000.,
-#                        'doubleGaussianYieldsModel/gauss2/gauss2Yield' : 30000.}
-#
-#     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+def testDoubleGaussianYields():
 
-# def testDoubleGaussianFrac():
-#
-#     model = doubleGaussianFracModel(5279., 15., 0.75, 5379., 20., 10000.)
-#
-#     dataGen = model.sample(minVal = 4200., maxVal = 5700.)
-#     fitter = gl.Fitter(model, backend = 'minuit')
-#     res = fitter.fit(dataGen, verbose = True)
-#
-#     plotter = gl.Plotter(model, dataGen)
-#     plotter.plotDataModel(nDataBins = 100)
-#     plt.savefig('doubleGaussianFracTest.pdf')
-#     plt.clf()
-#
-#     generatedParams = {'doubleGaussianFracModel/gauss1/mean' : 5279.,
-#                        'doubleGaussianFracModel/gauss2/mean' : 5379.,
-#                        'doubleGaussianFracModel/gauss1/sigma' : 15.,
-#                        'doubleGaussianFracModel/gauss2/sigma' : 20.,
-#                        'doubleGaussianFracModel/gaussFrac' : 0.75,
-#                        'doubleGaussianFracModel/totalYield' : 10000.}
-#
-#     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+    model = doubleGaussianYieldsModel(5279., 20., 50000, 5379., 20., 30000)
 
+    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('doubleGaussianYieldsTest.pdf')
+    plt.clf()
+
+    generatedParams = {'doubleGaussianYieldsModel/gauss1/mean' : 5279.,
+                       'doubleGaussianYieldsModel/gauss2/mean' : 5379.,
+                       'doubleGaussianYieldsModel/gauss1/sigma' : 20.,
+                       'doubleGaussianYieldsModel/gauss2/sigma' : 20.,
+                       'doubleGaussianYieldsModel/gauss1/gauss1Yield' : 50000.,
+                       'doubleGaussianYieldsModel/gauss2/gauss2Yield' : 30000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testDoubleGaussianFrac():
+
+    model = doubleGaussianFracModel(5279., 15., 0.75, 5379., 20., 10000.)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('doubleGaussianFracTest.pdf')
+    plt.clf()
+
+    generatedParams = {'doubleGaussianFracModel/gauss1/mean' : 5279.,
+                       'doubleGaussianFracModel/gauss2/mean' : 5379.,
+                       'doubleGaussianFracModel/gauss1/sigma' : 15.,
+                       'doubleGaussianFracModel/gauss2/sigma' : 20.,
+                       'doubleGaussianFracModel/gaussFrac' : 0.75,
+                       'doubleGaussianFracModel/totalYield' : 10000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
 if __name__ == '__main__':
 
