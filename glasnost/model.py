@@ -396,7 +396,7 @@ class Model(Distribution):
 
         else:
 
-            print(components)
+            print(self.fitComponents)
 
             print([ component.sample(nEvents = self.fitYields[component.name].value, minVal = minVal, maxVal = maxVal) for component in components ])
 
