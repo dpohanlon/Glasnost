@@ -4,6 +4,8 @@ python:
     - "2.7"
     - "3.6"
 
+cache: pip
+
 install:
     - pip install numpy scipy matplotlib seaborn corner quadpy emcee iminuit tqdm
     - pip install codecov nose2

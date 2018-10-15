@@ -357,9 +357,13 @@ class Model(Distribution):
 
         return np.sum(list(self.getComponentIntegrals(minVal, maxVal).values())) / len(self.getComponentIntegrals(minVal, maxVal).values())
 
-    def sample(self, nEvents = None, minVal = None, maxVal = None):
+    def sample(self, sentinel = None, nEvents = None, minVal = None, maxVal = None):
         # Generate according to yields and component models
         # Pass min and max ranges - ideally these would be separate for each 1D fit
+
+        if sentinel != None:
+            print('Sentinel in sample %s' %(self.name))
+            exit(0)
 
         if not nEvents and self.fitYields:
             # Set this to be the sum of the componentwise fit yields (useful for simultaneous fits)
@@ -391,6 +395,10 @@ class Model(Distribution):
             return z
 
         else:
+
+            print(components)
+
+            print([ component.sample(nEvents = self.fitYields[component.name].value, minVal = minVal, maxVal = maxVal) for component in components ])
 
             z = np.concatenate([ component.sample(nEvents = self.fitYields[component.name].value, minVal = minVal, maxVal = maxVal) for component in components ])
 
