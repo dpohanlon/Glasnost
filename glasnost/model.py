@@ -317,10 +317,11 @@ class Model(Distribution):
 
         out = self.getFloatingParameterValues()
 
-        # Maybe one day set this more intelligently
-
-        for k, v in self.getFloatingParameterValues().items():
-            out['error_' + k] = abs(0.1 * v) if 'yield' not in k else abs(1.)
+        for k, v in self.getFloatingParameters().items():
+            if 'yield' not in k:
+                out['error_' + k] =  0.01 * (v.max - v.min) # Mak sure we're in the bounds
+            else:
+                out['error_' + k] = 1.
 
         # Set limits also, rather than using the prior
         # (This is probably slow, try and merge with above as it gets similar things)

@@ -64,16 +64,16 @@ class Plotter(object):
 
         return nBins
 
-    def plotData(self, nDataBins = None, minVal = None, maxVal = None, fig = False, ax = None, log = False, **kwargs):
+    def plotData(self, data, nDataBins = None, minVal = None, maxVal = None, fig = False, ax = None, log = False, **kwargs):
 
-        minVal = minVal if minVal else np.min(self.data)
-        maxVal = maxVal if maxVal else np.max(self.data)
+        minVal = minVal if minVal else np.min(data)
+        maxVal = maxVal if maxVal else np.max(data)
 
         bins = np.linspace(minVal, maxVal, nDataBins if nDataBins else self.guessNBins(minVal, maxVal))
 
         self.dataBinning = bins
 
-        binnedData, b = np.histogram(self.data, bins = bins)
+        binnedData, b = np.histogram(data, bins = bins)
 
         binEdges = (b + 0.5 * (b[1] - b[0]))[:-1]
 
@@ -93,10 +93,10 @@ class Plotter(object):
 
         return
 
-    def plotModel(self, minVal = None, maxVal = None, fig = False, nSamples = 1000, ax = None, log = False, **kwargs):
+    def plotModel(self, data, model, minVal = None, maxVal = None, fig = False, nSamples = 1000, ax = None, log = False, **kwargs):
 
-        minVal = minVal if minVal else np.min(self.data)
-        maxVal = maxVal if maxVal else np.max(self.data)
+        minVal = minVal if minVal else np.min(data)
+        maxVal = maxVal if maxVal else np.max(data)
 
         binWidth = (self.dataBinning[1] - self.dataBinning[0]) if not self.dataBinning is None else None
 
@@ -116,10 +116,10 @@ class Plotter(object):
         if ax:
             f = ax
 
-        modelToPlot = self.model.prob(x)
+        modelToPlot = model.prob(x)
 
         # Normalise to total fitted yield
-        modelToPlot *= self.model.getTotalYield()
+        modelToPlot *= model.getTotalYield()
 
         # Normalised according to the data binning also plotted
         modelToPlot *= binWidth
@@ -132,26 +132,26 @@ class Plotter(object):
         # In the mean time, calculate this on the fly
 
         yields = {}
-        if self.model.fitYields:
-            yields = self.model.fitYields
+        if model.fitYields:
+            yields = model.fitYields
         else:
-            totalYield = self.model.getTotalYield()
+            totalYield = model.getTotalYield()
             if totalYield < 1E-3:
                 print('WARNING: Total yield must be set if plotting with fractional components.')
 
             totFF = 0
 
-            for n, frac in self.model.fitFracs.items():
+            for n, frac in model.fitFracs.items():
                 yields[n] = totalYield * frac.value_
                 totFF += frac.value_
 
-            for k in self.model.fitComponents.keys():
+            for k in model.fitComponents.keys():
                 if k not in yields:
                     yields[k] = totalYield * (1. - totFF)
 
-        if len(self.model.fitComponents.keys()) > 1:
+        if len(model.fitComponents.keys()) > 1:
 
-            for i, (n, c) in enumerate(self.model.fitComponents.items()):
+            for i, (n, c) in enumerate(model.fitComponents.items()):
                 plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
 
         if log : f.yscale("log", nonposy='clip')
@@ -161,8 +161,8 @@ class Plotter(object):
 
         return fig, ax
 
-        # yields = list(self.model.fitYields.values())[0:]
-        # for i, c in enumerate(list(self.model.fitComponents.values())[0:]):
+        # yields = list(model.fitYields.values())[0:]
+        # for i, c in enumerate(list(model.fitComponents.values())[0:]):
             # f.fill_between(x, 0, c.prob(x) * yields[i] * binWidth, color = colours[i])
 
         # plt.ylim(ymin = 0)
@@ -172,7 +172,7 @@ class Plotter(object):
 
     def plotDataModel(self, **kwargs):
 
-        self.plotData(**kwargs)
-        self.plotModel(**kwargs)
+        self.plotData(data = self.data, **kwargs)
+        self.plotModel(data = self.data, model = self.model, **kwargs)
 
         return

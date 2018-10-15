@@ -178,11 +178,11 @@ def simultaneousGaussiansModel(mean1, width1, nEvents1, width2, nEvents2):
 
     with gl.name_scope('simultaneousGaussiansModel'):
 
-        m1 = gl.Parameter(mean1, name = 'mean', minVal = 4200, maxVal = 5700)
+        m1 = gl.Parameter(mean1, name = 'mean', minVal = 5250., maxVal = 5400.)
 
         with gl.name_scope('gauss1'):
 
-            s1 = gl.Parameter(width1, name = 'sigma', minVal = 0, maxVal = width1 * 5)
+            s1 = gl.Parameter(width1, name = 'sigma', minVal = 0.1, maxVal = width1 * 1.5)
 
             gauss1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
 
@@ -190,7 +190,7 @@ def simultaneousGaussiansModel(mean1, width1, nEvents1, width2, nEvents2):
 
         with gl.name_scope('gauss2'):
 
-            s2 = gl.Parameter(width2, name = 'sigma', minVal = 0, maxVal = width2 * 5)
+            s2 = gl.Parameter(width2, name = 'sigma', minVal = 0.1, maxVal = width2 * 1.5)
 
             gauss2 = gl.Gaussian({'mean' : m1, 'sigma' : s2})
 
@@ -199,16 +199,16 @@ def simultaneousGaussiansModel(mean1, width1, nEvents1, width2, nEvents2):
     fitYields1 = {gauss1.name : gauss1Yield}
     fitComponents1 = {gauss1.name : gauss1}
 
-    model1 = gl.Model(name = 's1', initialFitYields = fitYields1, initialFitComponents = fitComponents1, minVal = 4200, maxVal = 5700)
+    model1 = gl.Model(name = 's1', initialFitYields = fitYields1, initialFitComponents = fitComponents1, minVal = 5000, maxVal = 5600)
 
     fitYields2 = {gauss2.name : gauss2Yield}
     fitComponents2 = {gauss2.name : gauss2}
 
-    model2 = gl.Model(name = 's2', initialFitYields = fitYields2, initialFitComponents = fitComponents2, minVal = 4200, maxVal = 5700)
+    model2 = gl.Model(name = 's2', initialFitYields = fitYields2, initialFitComponents = fitComponents2, minVal = 5000, maxVal = 5600)
 
     model = gl.SimultaneousModel(name = 's', initialFitComponents = [model1, model2])
 
-    return model
+    return model, model1, model2
 
 def doubleGaussianFracModel(mean1, width1, frac, mean2, width2, nEvents):
 
@@ -262,7 +262,6 @@ def testSimpleGaussian():
 
     # Test generating and fitting back with the same model
 
-    # model = simpleGaussianModel(5279., 20., 1000000.)
     model = simpleGaussianModel(4200., 20., 1000000.)
 
     dataGen = model.sample(minVal = 4200., maxVal = 5700.)
@@ -418,24 +417,31 @@ def testSimpleCB():
 
 def testSimultaneousGaussians():
 
-    model = simultaneousGaussiansModel(5279., 15., 50000, 30., 30000)
+    simModel, model1, model2 = simultaneousGaussiansModel(5279., 15., 500000, 30., 300000)
 
-    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
-    fitter = gl.Fitter(model, backend = 'minuit')
+    dataGen = simModel.sample(minVal = 5000., maxVal = 5600.)
+    fitter = gl.Fitter(simModel, backend = 'minuit')
     res = fitter.fit(dataGen, verbose = True)
 
-    # plotter = gl.Plotter(model, dataGen)
-    # plotter.plotDataModel(nDataBins = 100)
-    # plt.savefig('simultaneousGaussiansTest.pdf')
-    # plt.clf()
+    plotter1 = gl.Plotter(model1, dataGen[0])
+    plotter1.plotDataModel(nDataBins = 100)
+    plt.xlim(5100, 5500)
+    plt.savefig('simultaneousGaussiansTest1.pdf')
+    plt.clf()
+
+    plotter2 = gl.Plotter(model2, dataGen[1])
+    plotter2.plotDataModel(nDataBins = 100)
+    plt.xlim(5100, 5500)
+    plt.savefig('simultaneousGaussiansTest2.pdf')
+    plt.clf()
 
     generatedParams = {'simultaneousGaussiansModel/mean' : 5279.,
                        'simultaneousGaussiansModel/gauss1/sigma' : 15.,
                        'simultaneousGaussiansModel/gauss2/sigma' : 30.,
-                       'simultaneousGaussiansModel/gauss1/gauss1Yield' : 50000.,
-                       'simultaneousGaussiansModel/gauss2/gauss2Yield' : 30000.}
+                       'simultaneousGaussiansModel/gauss1/gauss1Yield' : 500000.,
+                       'simultaneousGaussiansModel/gauss2/gauss2Yield' : 300000.}
 
-    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+    return parameterPullsOkay(generatedParams, simModel.getFloatingParameters())
 
 def testDoubleGaussianYields():
 
