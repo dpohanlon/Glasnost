@@ -398,7 +398,7 @@ class Model(Distribution):
 
             print(self.fitComponents)
 
-            print([ component.sample(nEvents = self.fitYields[component.name].value, minVal = minVal, maxVal = maxVal) for component in components ])
+            # print([ component.sample(nEvents = self.fitYields[component.name].value, minVal = minVal, maxVal = maxVal) for component in components ])
 
             z = np.concatenate([ component.sample(nEvents = self.fitYields[component.name].value, minVal = minVal, maxVal = maxVal) for component in components ])
 
