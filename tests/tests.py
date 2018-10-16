@@ -210,6 +210,90 @@ def simultaneousGaussiansModel(mean1, width1, nEvents1, width2, nEvents2):
 
     return model, model1, model2
 
+def simultaneousModelLarge(mean1, width1, width2, a, nSignal, nBkg):
+
+    nSignal1, nSignal2, nSignal3, nSignal4 = nSignal
+    nBkg1, nBkg2, nBkg3, nBkg4 = nBkg
+
+    with gl.name_scope('simultaneousModelLarge'):
+
+        max = gl.Parameter(5000., name = 'max', fixed = True)
+        min = gl.Parameter(5600., name = 'min', fixed = True)
+
+        m1 = gl.Parameter(mean1, name = 'mean', minVal = 5250., maxVal = 5400.)
+        s1 = gl.Parameter(width1, name = 'sigma1', minVal = 0.1, maxVal = width1 * 1.5)
+        s2 = gl.Parameter(width2, name = 'sigma2', minVal = 0.1, maxVal = width2 * 1.5)
+
+        aExp = gl.Parameter(a, name = 'a', minVal = -0.05, maxVal = -0.0001)
+
+        with gl.name_scope('model1'):
+
+            with gl.name_scope('sig1'):
+
+                gauss1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
+
+                gauss1Yield = gl.Parameter(nSignal1, name = 'gauss1Yield', minVal = 0.8 * nSignal1, maxVal = 1.2 * nSignal1)
+
+            with gl.name_scope('bkg1'):
+
+                exp1 = gl.Exponential({'a' : aExp, 'min' : min, 'max' : max})
+
+                exp1Yield = gl.Parameter(nBkg1, name = 'exp1Yield', minVal = 0.8 * nBkg1, maxVal = 1.2 * nBkg1)
+
+            model1 = gl.Model(name = 's1', initialFitYields = {gauss1.name : gauss1Yield, exp1.name : exp1Yield}, initialFitComponents = {gauss1.name : gauss1, exp1.name : exp1}, minVal = 5000, maxVal = 5600)
+
+        with gl.name_scope('model2'):
+
+            with gl.name_scope('sig2'):
+
+                gauss2 = gl.Gaussian({'mean' : m1, 'sigma' : s2})
+
+                gauss2Yield = gl.Parameter(nSignal2, name = 'gauss2Yield', minVal = 0.8 * nSignal2, maxVal = 1.2 * nSignal2)
+
+            with gl.name_scope('bkg2'):
+
+                exp2 = gl.Exponential({'a' : aExp, 'min' : min, 'max' : max})
+
+                exp2Yield = gl.Parameter(nBkg2, name = 'exp2Yield', minVal = 0.8 * nBkg2, maxVal = 1.2 * nBkg2)
+
+            model2 = gl.Model(name = 's2', initialFitYields = {gauss2.name : gauss2Yield, exp2.name : exp2Yield}, initialFitComponents = {gauss2.name : gauss2, exp2.name : exp2}, minVal = 5000, maxVal = 5600)
+
+        with gl.name_scope('model3'):
+
+            with gl.name_scope('sig3'):
+
+                gauss3 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
+
+                gauss3Yield = gl.Parameter(nSignal3, name = 'gauss3Yield', minVal = 0.8 * nSignal3, maxVal = 1.2 * nSignal3)
+
+            with gl.name_scope('bkg3'):
+
+                exp3 = gl.Exponential({'a' : aExp, 'min' : min, 'max' : max})
+
+                exp3Yield = gl.Parameter(nBkg3, name = 'exp3Yield', minVal = 0.8 * nBkg3, maxVal = 1.2 * nBkg3)
+
+            model3 = gl.Model(name = 's3', initialFitYields = {gauss3.name : gauss3Yield, exp3.name : exp3Yield}, initialFitComponents = {gauss3.name : gauss3, exp3.name : exp3}, minVal = 5000, maxVal = 5600)
+
+        with gl.name_scope('model4'):
+
+            with gl.name_scope('sig4'):
+
+                gauss4 = gl.Gaussian({'mean' : m1, 'sigma' : s2})
+
+                gauss4Yield = gl.Parameter(nSignal4, name = 'gauss4Yield', minVal = 0.8 * nSignal4, maxVal = 1.2 * nSignal4)
+
+            with gl.name_scope('bkg4'):
+
+                exp4 = gl.Exponential({'a' : aExp, 'min' : min, 'max' : max})
+
+                exp4Yield = gl.Parameter(nBkg4, name = 'exp4Yield', minVal = 0.8 * nBkg4, maxVal = 1.2 * nBkg4)
+
+            model4 = gl.Model(name = 's4', initialFitYields = {gauss4.name : gauss4Yield, exp4.name : exp4Yield}, initialFitComponents = {gauss4.name : gauss4, exp4.name : exp4}, minVal = 5000, maxVal = 5600)
+
+        model = gl.SimultaneousModel(name = 's', initialFitComponents = [model1, model2, model3, model4])
+
+    return model, [model1, model2, model3, model4]
+
 def doubleGaussianFracModel(mean1, width1, frac, mean2, width2, nEvents):
 
     with gl.name_scope('doubleGaussianFracModel'):
@@ -443,6 +527,56 @@ def testSimultaneousGaussians():
 
     return parameterPullsOkay(generatedParams, simModel.getFloatingParameters())
 
+def testSimultaneousModelLarge():
+
+    nSignal = (10000., 10000., 10000., 10000.)
+    nBkg = (10000., 10000., 10000., 10000.)
+
+    simModel, (model1, model2, model3, model4) = simultaneousModelLarge(5279., 15., 35., -0.003, nSignal, nBkg)
+
+    dataGen = simModel.sample(minVal = 5000., maxVal = 5600.)
+    fitter = gl.Fitter(simModel, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter1 = gl.Plotter(model1, dataGen[0])
+    plotter1.plotDataModel(nDataBins = 100)
+    plt.xlim(5100, 5500)
+    plt.savefig('simultaneousModelLargeTest1.pdf')
+    plt.clf()
+
+    plotter2 = gl.Plotter(model2, dataGen[1])
+    plotter2.plotDataModel(nDataBins = 100)
+    plt.xlim(5100, 5500)
+    plt.savefig('simultaneousModelLargeTest2.pdf')
+    plt.clf()
+
+    plotter3 = gl.Plotter(model3, dataGen[2])
+    plotter3.plotDataModel(nDataBins = 100)
+    plt.xlim(5100, 5500)
+    plt.savefig('simultaneousModelLargeTest3.pdf')
+    plt.clf()
+
+    plotter4 = gl.Plotter(model4, dataGen[3])
+    plotter4.plotDataModel(nDataBins = 100)
+    plt.xlim(5100, 5500)
+    plt.savefig('simultaneousModelLargeTest4.pdf')
+    plt.clf()
+
+    generatedParams = {'simultaneousModelLarge/a' : -0.003,
+                       'simultaneousModelLarge/mean' : 5279.,
+                       'simultaneousModelLarge/model1/bkg1/exp1Yield' : 10000,
+                       'simultaneousModelLarge/model1/sig1/gauss1Yield' : 10000,
+                       'simultaneousModelLarge/model2/bkg2/exp2Yield' : 10000,
+                       'simultaneousModelLarge/model2/sig2/gauss2Yield' : 10000,
+                       'simultaneousModelLarge/model3/bkg3/exp3Yield' : 10000,
+                       'simultaneousModelLarge/model3/sig3/gauss3Yield' : 10000,
+                       'simultaneousModelLarge/model4/bkg4/exp4Yield' : 10000,
+                       'simultaneousModelLarge/model4/sig4/gauss4Yield' : 10000,
+                       'simultaneousModelLarge/sigma1' : 15.,
+                       'simultaneousModelLarge/sigma2' : 35. }
+
+    return parameterPullsOkay(generatedParams, simModel.getFloatingParameters())
+
 def testDoubleGaussianYields():
 
     model = doubleGaussianYieldsModel(5279., 20., 50000, 5379., 20., 30000)
@@ -489,13 +623,4 @@ def testDoubleGaussianFrac():
 
 if __name__ == '__main__':
 
-    # print(np.sum([testSimpleCB(),
-    #               testDoubleGaussianYields(),
-    #               testDoubleGaussianFrac(),
-    #               testSimpleGaussian(),
-    #               testSimpleGaussianWithExp(),
-    #               ] ))
-
-    # print(testSimpleGaussianWithUniform())
-    # print(testSimpleGaussianWithExp())
-    print(testSimultaneousGaussians())
+    print(testSimultaneousModelLarge())

@@ -57,7 +57,8 @@ class SimultaneousModel(Model):
 
         for c in self.fitComponentsSimultaneous:
             for v in c.getParameters().values():
-                params[v.name] = v
+                if not v.isFixed:
+                    params[v.name] = v
 
         return params
 

@@ -423,7 +423,7 @@ class Exponential(Distribution):
         if self.a == 0:
             return 1. / (self.max - self.min)
         else:
-            return self.a / ( np.exp(self.a * self.max) - np.exp(self.a * self.min) )
+            return np.abs(self.a) / ( np.exp(self.a * self.max) - np.exp(self.a * self.min) )
 
     def prob(self, data):
 
