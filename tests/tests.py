@@ -217,8 +217,8 @@ def simultaneousModelLarge(mean1, width1, width2, a, nSignal, nBkg):
 
     with gl.name_scope('simultaneousModelLarge'):
 
-        max = gl.Parameter(5000., name = 'max', fixed = True)
-        min = gl.Parameter(5600., name = 'min', fixed = True)
+        max = gl.Parameter(5600., name = 'max', fixed = True)
+        min = gl.Parameter(5000., name = 'min', fixed = True)
 
         m1 = gl.Parameter(mean1, name = 'mean', minVal = 5250., maxVal = 5400.)
         s1 = gl.Parameter(width1, name = 'sigma1', minVal = 0.1, maxVal = width1 * 1.5)
@@ -344,6 +344,8 @@ def simpleCBModel(mean, width, aVal, nVal, nEvents):
 
 def testSimpleGaussian():
 
+    print('testSimpleGaussian')
+
     # Test generating and fitting back with the same model
 
     model = simpleGaussianModel(4200., 20., 1000000.)
@@ -385,6 +387,8 @@ def testStudentsT():
 
 def testSimpleGaussianWithExp():
 
+    print('testSimpleGaussianWithExp')
+
     # Test generating and fitting back with the same model
 
     model = simpleGaussianWithExpModel(5279., 150., -0.002, 1000000., 2000000.)
@@ -408,6 +412,8 @@ def testSimpleGaussianWithExp():
 
 def testSimpleGaussianWithUniform():
 
+    print('testSimpleGaussianWithUniform')
+
     model = simpleGaussianWithUniformModel(5279., 150., 1000000., 2000000.)
 
     dataGen = model.sample(minVal = 4200., maxVal = 6000.)
@@ -427,6 +433,8 @@ def testSimpleGaussianWithUniform():
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
 def testSimpleGaussianGen():
+
+    print('testSimpleGaussianGen')
 
     # Test generating with NumPy and fitting back with a similar model
 
@@ -450,6 +458,8 @@ def testSimpleGaussianGen():
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
 def testSimpleGaussianMCMC():
+
+    print('testSimpleGaussianMCMC')
 
     # Test generating and fitting back with the same model
 
@@ -479,6 +489,8 @@ def testSimpleGaussianMCMC():
 
 def testSimpleCB():
 
+    print('testSimpleCB')
+
     # Test generating and fitting back with the same model
 
     model = simpleCBModel(0., 1., 1.0, 1.1, 100000.)
@@ -500,6 +512,8 @@ def testSimpleCB():
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
 def testSimultaneousGaussians():
+
+    print('testSimultaneousGaussians')
 
     simModel, model1, model2 = simultaneousGaussiansModel(5279., 15., 500000, 30., 300000)
 
@@ -528,6 +542,8 @@ def testSimultaneousGaussians():
     return parameterPullsOkay(generatedParams, simModel.getFloatingParameters())
 
 def testSimultaneousModelLarge():
+
+    print('testSimultaneousModelLarge')
 
     nSignal = (10000., 10000., 10000., 10000.)
     nBkg = (10000., 10000., 10000., 10000.)
@@ -579,6 +595,8 @@ def testSimultaneousModelLarge():
 
 def testDoubleGaussianYields():
 
+    print('testDoubleGaussianYields')
+
     model = doubleGaussianYieldsModel(5279., 20., 50000, 5379., 20., 30000)
 
     dataGen = model.sample(minVal = 4200., maxVal = 5700.)
@@ -600,6 +618,8 @@ def testDoubleGaussianYields():
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
 def testDoubleGaussianFrac():
+
+    print('testDoubleGaussianFrac')
 
     model = doubleGaussianFracModel(5279., 15., 0.75, 5379., 20., 10000.)
 
