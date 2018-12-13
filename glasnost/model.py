@@ -317,14 +317,8 @@ class Model(Distribution):
 
         out = self.getFloatingParameterValues()
 
-        for k, v in self.getFloatingParameters().items():
-            if 'yield' not in k:
-                out['error_' + k] =  0.01 * (v.max - v.min) # Mak sure we're in the bounds
-            else:
-                out['error_' + k] = 1.
-
         # Set limits also, rather than using the prior
-        # (This is probably slow, try and merge with above as it gets similar things)
+        # (This is probably slow, try and merge as it gets similar things)
 
         for c in self.fitComponents.values():
             for v in c.getParameters().values():
@@ -344,6 +338,12 @@ class Model(Distribution):
                     out['limit_' + v.name] = (v.min, abs(v.value_) * 100.)
                 elif v.max != None:
                     out['limit_' + v.name] = (-abs(v.value_) * 100, v.max)
+
+        for k, v in self.getFloatingParameters().items():
+            if 'yield' not in k:
+                out['error_' + k] =  0.01 * (out['limit_' + v.name][0] - out['limit_' + v.name][1]) # Mak sure we're in the bounds
+            else:
+                out['error_' + k] = 1.
 
         # Might be slow - try another way
         out = OrderedDict(sorted(out.items(), key = lambda x : x[0]))
