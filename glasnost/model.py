@@ -317,37 +317,33 @@ class Model(Distribution):
 
         out = self.getFloatingParameterValues()
 
-        # Set limits also, rather than using the prior
-        # (This is probably slow, try and merge as it gets similar things)
-
-        for c in self.fitComponents.values():
-            for v in c.getParameters().values():
-                if not v.isFixed:
-                    if v.min != None and v.max != None :
-                        out['limit_' + v.name] = (v.min, v.max)
-                    elif v.min != None:
-                        out['limit_' + v.name] = (v.min, abs(v.value_) * 100.)
-                    elif v.max != None:
-                        out['limit_' + v.name] = (-abs(v.value_) * 100, v.max)
-                    else:
-                        out['limit_' + v.name] = (-abs(v.value_) * 100, abs(v.value_) * 100.)
-
-        for v in list(self.fitYields.values()) + list(self.fitFracs.values()):
-            if not v.isFixed:
-                if v.min != None and v.max != None :
-                    out['limit_' + v.name] = (v.min, v.max)
-                elif v.min != None:
-                    out['limit_' + v.name] = (v.min, abs(v.value_) * 100.)
-                elif v.max != None:
-                    out['limit_' + v.name] = (-abs(v.value_) * 100, v.max)
-                else:
-                    out['limit_' + v.name] = (-abs(v.value_) * 100, abs(v.value_) * 100.)
+        # Get the parameters, limits and errors for this model
 
         for k, v in self.getFloatingParameters().items():
-            if 'yield' not in k:
+
+            if v.min != None and v.max != None :
+                out['limit_' + v.name] = (v.min, v.max)
+            elif v.min != None:
+                out['limit_' + v.name] = (v.min, abs(v.value_) * 100.)
+            elif v.max != None:
+                out['limit_' + v.name] = (-abs(v.value_) * 100, v.max)
+            else:
+                out['limit_' + v.name] = (-abs(v.value_) * 100, abs(v.value_) * 100.)
+
+            if 'yield' not in k.lower():
                 out['error_' + k] =  0.01 * (out['limit_' + v.name][0] - out['limit_' + v.name][1]) # Make sure we're in the bounds
             else:
                 out['error_' + k] = 1.
+
+        # Get the parameters for the sub-models
+
+        for c in self.fitComponents.values():
+
+            # Definitely do not do this. Perhaps make parameter errors a property of Distribution rather than Model
+            # and then collect them from the underlying distributions once we reach the end?
+
+            if getattr(c, "getInitialParameterValuesAndStepSizes", None):
+                out.update(c.getInitialParameterValuesAndStepSizes())
 
         # Might be slow - try another way
         out = OrderedDict(sorted(out.items(), key = lambda x : x[0]))
