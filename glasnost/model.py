@@ -329,6 +329,8 @@ class Model(Distribution):
                         out['limit_' + v.name] = (v.min, abs(v.value_) * 100.)
                     elif v.max != None:
                         out['limit_' + v.name] = (-abs(v.value_) * 100, v.max)
+                    else:
+                        out['limit_' + v.name] = (-abs(v.value_) * 100, abs(v.value_) * 100.)
 
         for v in list(self.fitYields.values()) + list(self.fitFracs.values()):
             if not v.isFixed:
@@ -338,10 +340,12 @@ class Model(Distribution):
                     out['limit_' + v.name] = (v.min, abs(v.value_) * 100.)
                 elif v.max != None:
                     out['limit_' + v.name] = (-abs(v.value_) * 100, v.max)
+                else:
+                    out['limit_' + v.name] = (-abs(v.value_) * 100, abs(v.value_) * 100.)
 
         for k, v in self.getFloatingParameters().items():
             if 'yield' not in k:
-                out['error_' + k] =  0.01 * (out['limit_' + v.name][0] - out['limit_' + v.name][1]) # Mak sure we're in the bounds
+                out['error_' + k] =  0.01 * (out['limit_' + v.name][0] - out['limit_' + v.name][1]) # Make sure we're in the bounds
             else:
                 out['error_' + k] = 1.
 
