@@ -26,7 +26,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
         self.priorDistribution = priorDistribution
 
-        self.fixed_ = fixed
+        self.fixed_ = fixed or (self.min == None and self.max == None)
 
         # Can envision blinding, errors, etc
 
