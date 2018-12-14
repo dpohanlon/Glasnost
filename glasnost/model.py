@@ -238,12 +238,20 @@ class Model(Distribution):
             # equal weight
             yields = {c.name : (1.0 / len(components)) for c in components}
 
-        # totalNorm = self.integral(self.min, self.max)
-        # norm = {n : c / totalNorm for (n, c) in self.getComponentIntegrals(self.min, self.max).items()}
-        norm = {n : c for (n, c) in self.getComponentIntegrals(self.min, self.max).items()}
+        # norm = {n : c for (n, c) in self.getComponentIntegrals(self.min, self.max).items()}
+
+        norm = {}
+
+        for n, c in self.getComponentIntegrals(self.min, self.max).items():
+            # Composite models should already be normalised by their components, so the normalisation
+            # for each should be 1 - do this in a better way
+            if getattr(self.fitComponents[n], "getInitialParameterValuesAndStepSizes", None) != None:
+                norm[n] = 1.
+            else:
+                norm[n] = c
+
         totalYield = np.sum(list(yields.values()))
 
-        # z = [ (1. / norm[component.name]) * yields[component.name] * component.prob(data) for component in components ]
         z = [ (yields[component.name] / (norm[component.name] * totalYield)) * component.prob(data) for component in components ]
 
         # Matrix of (nComponents, nData) -> uses lots of memory, rewrite using einsum?
@@ -352,6 +360,8 @@ class Model(Distribution):
 
     def getComponentIntegrals(self, minVal, maxVal):
 
+        # Probably want to implement some caching - maybe here?
+
         return {name : c.integral(minVal, maxVal) for (name, c) in self.fitComponents.items()}
 
     def integral(self, minVal, maxVal):
@@ -359,7 +369,7 @@ class Model(Distribution):
         return np.sum(list(self.getComponentIntegrals(minVal, maxVal).values())) / len(self.getComponentIntegrals(minVal, maxVal).values())
 
     def sample(self, sentinel = None, nEvents = None, minVal = None, maxVal = None):
-        # Generate according to yields and component models
+        # Generate according to yields and component models - yield is yield IN RANGE
         # Pass min and max ranges - ideally these would be separate for each 1D fit
 
         if sentinel != None:

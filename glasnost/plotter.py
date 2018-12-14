@@ -149,10 +149,12 @@ class Plotter(object):
                 if k not in yields:
                     yields[k] = totalYield * (1. - totFF)
 
+        norm = model.getComponentIntegrals(minVal, maxVal)
+
         if len(model.fitComponents.keys()) > 1:
 
             for i, (n, c) in enumerate(model.fitComponents.items()):
-                plt.plot(x, c.prob(x) * yields[n] * binWidth, color = colours[i], **self.componentCurveConfig)
+                plt.plot(x, c.prob(x) * yields[n] * binWidth / norm[n], color = colours[i], **self.componentCurveConfig)
 
         if log : f.yscale("log", nonposy='clip')
         else : plt.ylim(ymin = 0)
