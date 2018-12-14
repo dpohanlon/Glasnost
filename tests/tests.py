@@ -151,7 +151,7 @@ def doubleGaussianYieldsModel(mean1, width1, nEvents1, mean2, width2, nEvents2):
 
         with gl.name_scope('gauss1'):
 
-            m1 = gl.Parameter(mean1, name = 'mean', minVal = 4200, maxVal = 5700)
+            m1 = gl.Parameter(mean1, name = 'mean', minVal = 4800, maxVal = 5700)
             s1 = gl.Parameter(width1, name = 'sigma', minVal = 0, maxVal = width1 * 5)
 
             gauss1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
@@ -160,7 +160,7 @@ def doubleGaussianYieldsModel(mean1, width1, nEvents1, mean2, width2, nEvents2):
 
         with gl.name_scope('gauss2'):
 
-            m2 = gl.Parameter(mean2, name = 'mean', minVal = 4200, maxVal = 5700)
+            m2 = gl.Parameter(mean2, name = 'mean', minVal = 4800, maxVal = 5700)
             s2 = gl.Parameter(width2, name = 'sigma', minVal = 0, maxVal = width2 * 5)
 
             gauss2 = gl.Gaussian({'mean' : m2, 'sigma' : s2})
@@ -170,7 +170,7 @@ def doubleGaussianYieldsModel(mean1, width1, nEvents1, mean2, width2, nEvents2):
     fitYields = {gauss1.name : gauss1Yield, gauss2.name : gauss2Yield}
     fitComponents = {gauss1.name : gauss1, gauss2.name : gauss2}
 
-    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4200, maxVal = 5700)
+    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 5300, maxVal = 5700)
 
     return model
 
@@ -316,9 +316,9 @@ def doubleGaussianFracModel(mean1, width1, frac, mean2, width2, nEvents):
         totalYield = gl.Parameter(nEvents, name = 'totalYield', minVal = 0.8 * nEvents, maxVal = 1.2 * nEvents)
 
     fitComponents = {gauss1.name : gauss1, gauss2.name : gauss2}
-    doubleGaussian = gl.Model(initialFitFracs = {gauss1.name : gaussFrac}, initialFitComponents = fitComponents, minVal = 4200, maxVal = 5700)
+    doubleGaussian = gl.Model(initialFitFracs = {gauss1.name : gaussFrac}, initialFitComponents = fitComponents, minVal = 5280, maxVal = 5700)
 
-    model = gl.Model(initialFitYields = {doubleGaussian.name : totalYield}, initialFitComponents = {doubleGaussian.name : doubleGaussian}, minVal = 4200, maxVal = 5700)
+    model = gl.Model(initialFitYields = {doubleGaussian.name : totalYield}, initialFitComponents = {doubleGaussian.name : doubleGaussian}, minVal = 5280, maxVal = 5700)
 
     return model
 
@@ -599,7 +599,7 @@ def testDoubleGaussianYields():
 
     model = doubleGaussianYieldsModel(5279., 20., 50000, 5379., 20., 30000)
 
-    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
+    dataGen = model.sample(minVal = 5300., maxVal = 5700.)
     fitter = gl.Fitter(model, backend = 'minuit')
     res = fitter.fit(dataGen, verbose = True)
 
@@ -623,7 +623,7 @@ def testDoubleGaussianFrac():
 
     model = doubleGaussianFracModel(5279., 15., 0.75, 5379., 20., 10000.)
 
-    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
+    dataGen = model.sample(minVal = 5280., maxVal = 5700.)
     fitter = gl.Fitter(model, backend = 'minuit')
     res = fitter.fit(dataGen, verbose = True)
 
