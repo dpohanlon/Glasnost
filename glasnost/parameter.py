@@ -1,5 +1,7 @@
 import numpy as np
 
+import re
+
 import glasnost as gl
 
 class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
@@ -12,12 +14,22 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     """
 
-    def __init__(self, initialValue, name = '', minVal = None, maxVal = None, fixed = False, priorDistribution = None):
+    def __init__(self, value, name = '', minVal = None, maxVal = None, fixed = False, priorDistribution = None, **kwargs):
 
         self.name_ = gl.utils.nameScope + name
 
-        self.initialValue = initialValue
-        self.value_ = self.initialValue
+        self.kw = kwargs
+
+        self.initialValue = value
+
+        self.derived_ = type(value) == str
+
+        if self.derived_:
+            value = self.transformToInternalRep(value)
+
+        self.transform_ = compile(value, '', 'eval') if self.derived_ else None
+
+        self.value_ = self.initialValue if not self.derived_ else eval(self.transform_)
 
         # Leave these unconstrained unless we have to have strict minima and maxima
 
@@ -26,7 +38,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
         self.priorDistribution = priorDistribution
 
-        self.fixed_ = fixed or (self.min == None and self.max == None)
+        self.fixed_ = fixed or (self.min == None and self.max == None) or self.transform_ != None
 
         # Can envision blinding, errors, etc
 
@@ -34,9 +46,15 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     def __repr__(self):
         if not self.error_:
-            return "%s: %s" % (self.name, self.value_)
+            if not (self.min or self.max):
+                return "%s: %s" % (self.name, self.value)
+            else:
+                return "%s: %s, [%s, %s]" % (self.name, self.value, self.min, self.max)
         else:
-            return "%s: %s +/- %s" % (self.name, self.value_, self.error_)
+            if not (self.min or self.max):
+                return "%s: %s +/- %s" % (self.name, self.value, self.error_)
+            else:
+                return "%s: %s +/- %s, [%s, %s]" % (self.name, self.value, self.error_, self.min, self.max)
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         # Magic function to catch numpy array operations and decay the Parameter to the base
@@ -45,7 +63,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
         # Convert Parameter instances to their value_ equivalent before performing numpy
         # operations
 
-        inputs = [i.value_ if isinstance(i, Parameter) else i for i in inputs]
+        inputs = [i.value if isinstance(i, Parameter) else i for i in inputs]
 
         return getattr(ufunc, method)(*inputs, **kwargs)
 
@@ -56,7 +74,10 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
     @property
     def value(self):
         if self.priorDistribution == None:
-            return self.value_
+            if self.derived_ == False:
+                return self.value_
+            else:
+                return eval(self.transform_)
         else:
             return self.priorDistribution.randomSample() # TODO: Implement me
 
@@ -75,42 +96,67 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
         return self.fixed_
 
     def __float__(self):
-        return self.value_
+        return self.value
+
+    def isNumeric(self, t):
+        return (type(t) == float) or (type(t) == int)
+
+    def transformToInternalRep(self, rep):
+        for v in self.kw.keys():
+            rep = re.sub(v, "self.kw['" + v + "']", rep)
+
+        return rep
 
     # Built in Parameter operations that can return Parameters. If numpy operations, the operation gets
     # deferred to __array_ufunc__ to return floats/numpy arrays
 
+    # These are intended to operate on scalars ('numeric') only, to improve performance
+
+    def __neg__(self):
+        return Parameter(-self.value, name = self.name + '-add-float')
+
     def __add__(self, other):
         if isinstance(other, Parameter):
-            return Parameter(self.value_ + other.value_, name = self.name + '-add-' + other.name)
+            return Parameter(self.value + other.value, name = self.name + '-add-' + other.name)
+        elif self.isNumeric(other):
+            return Parameter(self.value + other, name = self.name + '-add-float')
         else:
-            return Parameter(self.value_ + other, name = self.name + '-add-float')
+            return self.value + other
 
     __radd__ = __add__
 
     def __mul__(self, other):
         if isinstance(other, Parameter):
-            return Parameter(self.value_ * other.value_, name = self.name + '-mul-' + other.name)
+            return Parameter(self.value * other.value, name = self.name + '-mul-' + other.name)
+        elif self.isNumeric(other):
+            return Parameter(self.value * other, name = self.name + '-mul-float')
         else:
-            return Parameter(self.value_ * other, name = self.name + '-mul-float')
+            return self.value * other
 
     __rmul__ = __mul__
 
     def __sub__(self, other):
         if isinstance(other, Parameter):
-            return Parameter(self.value_ - other.value_, name = self.name + '-sub-' + other.name)
+            return Parameter(self.value - other.value, name = self.name + '-sub-' + other.name)
+        elif self.isNumeric(other):
+            return Parameter(self.value - other, name = self.name + '-sub-float')
         else:
-            return Parameter(self.value_ - other, name = self.name + '-sub-float')
+            return self.value - other
 
     # Not == __sub__!
     def __rsub__(self, other):
             return Parameter(other - self.value_, name = self.name + '-rsub-float')
 
-    def _div__(self, other):
+    def __div__(self, other):
         if isinstance(other, Parameter):
-            return Parameter(self.value_ / other.value_, name = self.name + '-div-' + other.name)
+            return Parameter(self.value / other.value, name = self.name + '-div-' + other.name)
+        elif self.isNumeric(other):
+            return Parameter(self.value / other, name = self.name + '-div-float')
         else:
-            return Parameter(self.value_ / other, name = self.name + '-div-float')
+            return self.value / other
+
+    __truediv__ = __div__
+    __floordiv__ = __div__
 
     # Not == __div__!
     def __rdiv__(self, other):
@@ -118,24 +164,24 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     def __pow__(self, other):
         if isinstance(other, Parameter):
-            return Parameter(self.value_ ** other.value_, name = self.name + '-pow-' + other.name)
-        else:
-            return Parameter(self.value_ ** other, name = self.name + '-pow-float')
+            return Parameter(self.value ** other.value, name = self.name + '-pow-' + other.name)
+        elif self.isNumeric(other):
+            return Parameter(self.value ** other, name = self.name + '-pow-float')
 
     def __lt__(self, other):
         if isinstance(other, Parameter):
-            return self.value_ < other.value_
+            return self.value < other.value
         else:
-            return self.value_ < other
+            return self.value < other
 
     def __gt__(self, other):
         if isinstance(other, Parameter):
-            return self.value_ > other.value_
+            return self.value > other.value
         else:
-            return self.value_ > other
+            return self.value > other
 
     def __eq__(self, other):
         if isinstance(other, Parameter):
-            return self.value_ == other.value_
+            return self.value == other.value
         else:
-            return self.value_ == other
+            return self.value == other

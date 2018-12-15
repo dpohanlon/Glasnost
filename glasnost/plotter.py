@@ -24,7 +24,6 @@ import seaborn.apionly as sns
 
 # colours = sns.light_palette((210, 90, 60), input="husl")
 # colours = ['#ff3000', '#ff8f00', '#14b8b8']
-colours = sns.color_palette("Spectral", 5)
 
 import numpy as np
 
@@ -142,14 +141,16 @@ class Plotter(object):
             totFF = 0
 
             for n, frac in model.fitFracs.items():
-                yields[n] = totalYield * frac.value_
-                totFF += frac.value_
+                yields[n] = totalYield * frac.value
+                totFF += frac.value
 
             for k in model.fitComponents.keys():
                 if k not in yields:
                     yields[k] = totalYield * (1. - totFF)
 
         norm = model.getComponentIntegrals(minVal, maxVal)
+
+        colours = sns.color_palette("YlOrRd", len(model.fitComponents.keys()))
 
         if len(model.fitComponents.keys()) > 1:
 

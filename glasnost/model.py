@@ -243,8 +243,10 @@ class Model(Distribution):
         norm = {}
 
         for n, c in self.getComponentIntegrals(self.min, self.max).items():
+
             # Composite models should already be normalised by their components, so the normalisation
             # for each should be 1 - do this in a better way
+
             if getattr(self.fitComponents[n], "getInitialParameterValuesAndStepSizes", None) != None:
                 norm[n] = 1.
             else:
