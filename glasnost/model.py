@@ -56,7 +56,11 @@ class Model(Distribution):
 
         for component in initialFitComponents.values():
             for parameter in component.getParameters().values():
-                self.parameters[parameter.name] = parameter
+                if not parameter.derived_:
+                    self.parameters[parameter.name] = parameter
+                else:
+                    for underlyingParam in parameter.kw.values():
+                        self.parameters[underlyingParam.name] = underlyingParam
 
         if initialFitYields:
             for y in initialFitYields.values():
@@ -108,40 +112,13 @@ class Model(Distribution):
 
     def getFloatingParameterNames(self):
 
-        names = set(self.getComponentFloatingParameterNames())
-
-        if self.fitYields:
-            # Add yields from the model
-            for y in self.fitYields.values():
-                if not y.isFixed:
-                    names.add(y.name)
-
-        if self.fitFracs:
-            # Add fracs from the model
-            for y in self.fitFracs.values():
-                if not y.isFixed:
-                    names.add(y.name)
+        names = set(v.name for v in self.getFloatingParameters().values())
 
         return sorted(list(names))
 
     def getFloatingParameterValues(self):
 
-        values = {}
-
-        if self.fitYields:
-            for y in self.fitYields.values():
-                if not y.isFixed:
-                    values[y.name] = y.value
-
-        if self.fitFracs:
-            for y in self.fitFracs.values():
-                if not y.isFixed:
-                    values[y.name] = y.value
-
-        for c in self.fitComponents.values():
-            for v in c.getParameters().values():
-                if not v.isFixed:
-                    values[v.name] = v.value
+        values = {n : p.value for n, p in self.getFloatingParameters().items()}
 
         return values
 
@@ -160,9 +137,16 @@ class Model(Distribution):
                     values[y.name] = y
 
         for c in self.fitComponents.values():
+
             for v in c.getParameters().values():
+
                 if not v.isFixed:
                     values[v.name] = v
+
+                elif v.derived_:
+                    for underlyingParam in v.kw.values():
+                        if not underlyingParam.isFixed:
+                            values[underlyingParam.name] = underlyingParam
 
         return values
 

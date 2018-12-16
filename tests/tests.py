@@ -355,15 +355,53 @@ def constrainedGaussiansModel(mean, width, nEvents1, nEventsOther):
 
         with gl.name_scope('gauss2'):
 
-            m2 = gl.Parameter('m1 + 100.', name = 'mean2', minVal = 4200, maxVal = 5700, m1 = m1)
-            s2 = gl.Parameter('s1 / 2.', name = 'sigma2', minVal = 0, maxVal = width * 5, s1 = s1)
+            m2 = gl.Parameter('m1 + 100.', name = 'mean2', m1 = m1)
+            s2 = gl.Parameter('s1 / 2.', name = 'sigma2', s1 = s1)
 
             gauss2 = gl.Gaussian({'mean' : m2, 'sigma' : s2})
 
         with gl.name_scope('gauss3'):
 
-            m3 = gl.Parameter('m1 - 300.', name = 'mean3', minVal = 4200, maxVal = 5700, m1 = m1)
-            s3 = gl.Parameter('s1 * 2.', name = 'sigma3', minVal = 0, maxVal = width * 5, s1 = s1)
+            m3 = gl.Parameter('m1 - 300.', name = 'mean3', m1 = m1)
+            s3 = gl.Parameter('s1 * 2.', name = 'sigma3', s1 = s1)
+
+            gauss3 = gl.Gaussian({'mean' : m3, 'sigma' : s3})
+
+        gauss1Yield = gl.Parameter(nEvents1, name = 'gauss1Yield', minVal = 0.8 * nEvents1, maxVal = 1.2 * nEvents1)
+        gauss2Yield = gl.Parameter(nEventsOther, name = 'gauss2Yield', minVal = 0.8 * nEventsOther, maxVal = 1.2 * nEventsOther)
+        gauss3Yield = gl.Parameter(nEventsOther, name = 'gauss3Yield', minVal = 0.8 * nEventsOther, maxVal = 1.2 * nEventsOther)
+
+        fitYields = {gauss1.name : gauss1Yield, gauss2.name : gauss2Yield, gauss3.name : gauss3Yield}
+        fitComponents = {gauss1.name : gauss1, gauss2.name : gauss2, gauss3.name : gauss3}
+
+        model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4200, maxVal = 5700)
+
+    return model
+
+def externConstrainedGaussiansModel(mean, width, nEvents1, nEventsOther):
+
+    with gl.name_scope('externConstrainedGaussiansTest'):
+
+        m = gl.Parameter(mean, name = 'mean', minVal = 4200, maxVal = 5700)
+
+        with gl.name_scope('gauss1'):
+
+            m1 = gl.Parameter('m + 0.', name = 'mean1', m = m)
+            s1 = gl.Parameter(width, name = 'sigma1', minVal = 0, maxVal = width * 5)
+
+            gauss1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
+
+        with gl.name_scope('gauss2'):
+
+            m2 = gl.Parameter('m1 + 100.', name = 'mean2', m1 = m1)
+            s2 = gl.Parameter('s1 / 2.', name = 'sigma2', s1 = s1)
+
+            gauss2 = gl.Gaussian({'mean' : m2, 'sigma' : s2})
+
+        with gl.name_scope('gauss3'):
+
+            m3 = gl.Parameter('m1 - 300.', name = 'mean3', m1 = m1)
+            s3 = gl.Parameter('s1 * 2.', name = 'sigma3', s1 = s1)
 
             gauss3 = gl.Gaussian({'mean' : m3, 'sigma' : s3})
 
@@ -705,6 +743,38 @@ def testConstrainedGaussians():
     sigmaErrorOkay = model.getFloatingParameters()['constrainedGaussiansTest/gauss1/sigma1'].error < 0.05
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters()) and meanErrorOkay and sigmaErrorOkay
+
+def testExternConstrainedGaussians():
+
+    print('testExternConstrainedGaussians')
+
+    model = externConstrainedGaussiansModel(5300., 20., 100., 100000.)
+
+    dataGen = np.concatenate( (np.random.normal(5400, 30, size = int(100.)),
+                              np.random.normal(5500, 15, size = int(100000.)),
+                              np.random.normal(5100, 60, size = int(100000.)) ))
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('externConstrainedGaussiansTest.pdf')
+    plt.clf()
+
+    generatedParams = {'externConstrainedGaussiansTest/mean' : 5400.,
+                       'externConstrainedGaussiansTest/gauss1/sigma1' : 20.,
+                       'externConstrainedGaussiansTest/gauss1Yield' : 100.,
+                       'externConstrainedGaussiansTest/gauss2Yield' : 100000.,
+                       'externConstrainedGaussiansTest/gauss3Yield' : 100000.}
+
+    # Important that the two high yield components contribute to the precision, not just fitting
+    # the mean of the small one, so check this
+
+    meanErrorOkay = model.getFloatingParameters()['externConstrainedGaussiansTest/mean'].error < 0.05
+    sigmaErrorOkay = model.getFloatingParameters()['externConstrainedGaussiansTest/gauss1/sigma1'].error < 0.05
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters()) and meanErrorOkay and sigmaErrorOkay
+
 
 if __name__ == '__main__':
 
