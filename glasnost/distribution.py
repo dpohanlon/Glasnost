@@ -25,6 +25,13 @@ class Distribution(object):
     def __init__(self, parameters = None, name = ''):
 
         self.name = gl.utils.nameScope.rstrip('/') if not name else gl.utils.nameScope + name
+
+        if parameters:
+            for k, p in parameters.items():
+                if type(p) != gl.Parameter:
+                    # Assume this is int, float, ...
+                    parameters[k] = gl.Parameter(p, name = self.name + '/' + k)
+
         self.parameters = parameters
 
     def updateParameters(self, parameters):

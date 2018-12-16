@@ -168,6 +168,13 @@ class Model(Distribution):
 
         return 0
 
+    def parameterLnPriors(self):
+        params = self.getFloatingParameters()
+
+        lnPriors = [p.lnPrior() for _, p in params.items()]
+
+        return np.sum(lnPriors)
+
     def prob(self, data):
 
         return np.exp(self.lnprob(data))
@@ -257,7 +264,7 @@ class Model(Distribution):
 
     def lnprobVal(self, data):
 
-        lnPriors = self.parameterRangeLnPriors()
+        lnPriors = self.parameterRangeLnPriors() + self.parameterLnPriors()
 
         # Short circuit to avoid returning nan
         if np.isinf(lnPriors):

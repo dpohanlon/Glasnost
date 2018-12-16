@@ -73,13 +73,10 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     @property
     def value(self):
-        if self.priorDistribution == None:
-            if self.derived_ == False:
-                return self.value_
-            else:
-                return eval(self.transform_).value
+        if self.derived_ == False:
+            return self.value_
         else:
-            return self.priorDistribution.randomSample() # TODO: Implement me
+            return eval(self.transform_).value
 
     def updateValue(self, value):
         self.value_ = value
@@ -106,6 +103,12 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
             rep = re.sub(v, "self.kw['" + v + "']", rep)
 
         return rep
+
+    def lnPrior(self):
+        if self.priorDistribution:
+            return self.priorDistribution.lnprob(self.value)
+        else:
+            return 0.
 
     # Built in Parameter operations that can return Parameters. If numpy operations, the operation gets
     # deferred to __array_ufunc__ to return floats/numpy arrays
