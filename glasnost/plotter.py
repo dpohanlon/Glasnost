@@ -29,7 +29,7 @@ import numpy as np
 
 class Plotter(object):
     """
-
+    
     Handle plotting data and model projections.
 
     """

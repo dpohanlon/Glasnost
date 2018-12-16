@@ -342,6 +342,42 @@ def simpleCBModel(mean, width, aVal, nVal, nEvents):
 
     return model
 
+def constrainedGaussiansModel(mean, width, nEvents1, nEventsOther):
+
+    with gl.name_scope('constrainedGaussiansTest'):
+
+        with gl.name_scope('gauss1'):
+
+            m1 = gl.Parameter(mean, name = 'mean1', minVal = 4200, maxVal = 5700)
+            s1 = gl.Parameter(width, name = 'sigma1', minVal = 0, maxVal = width * 5)
+
+            gauss1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
+
+        with gl.name_scope('gauss2'):
+
+            m2 = gl.Parameter('m1 + 100.', name = 'mean2', minVal = 4200, maxVal = 5700, m1 = m1)
+            s2 = gl.Parameter('s1 / 2.', name = 'sigma2', minVal = 0, maxVal = width * 5, s1 = s1)
+
+            gauss2 = gl.Gaussian({'mean' : m2, 'sigma' : s2})
+
+        with gl.name_scope('gauss3'):
+
+            m3 = gl.Parameter('m1 - 300.', name = 'mean3', minVal = 4200, maxVal = 5700, m1 = m1)
+            s3 = gl.Parameter('s1 * 2.', name = 'sigma3', minVal = 0, maxVal = width * 5, s1 = s1)
+
+            gauss3 = gl.Gaussian({'mean' : m3, 'sigma' : s3})
+
+        gauss1Yield = gl.Parameter(nEvents1, name = 'gauss1Yield', minVal = 0.8 * nEvents1, maxVal = 1.2 * nEvents1)
+        gauss2Yield = gl.Parameter(nEventsOther, name = 'gauss2Yield', minVal = 0.8 * nEventsOther, maxVal = 1.2 * nEventsOther)
+        gauss3Yield = gl.Parameter(nEventsOther, name = 'gauss3Yield', minVal = 0.8 * nEventsOther, maxVal = 1.2 * nEventsOther)
+
+        fitYields = {gauss1.name : gauss1Yield, gauss2.name : gauss2Yield, gauss3.name : gauss3Yield}
+        fitComponents = {gauss1.name : gauss1, gauss2.name : gauss2, gauss3.name : gauss3}
+
+        model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4200, maxVal = 5700)
+
+    return model
+
 def testSimpleGaussian():
 
     print('testSimpleGaussian')
@@ -640,6 +676,35 @@ def testDoubleGaussianFrac():
                        'doubleGaussianFracModel/totalYield' : 10000.}
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testConstrainedGaussians():
+
+    print('testConstrainedGaussians')
+
+    model = constrainedGaussiansModel(5300., 20., 100., 100000.)
+
+    dataGen = model.sample(minVal = 4200., maxVal = 5700.)
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('constrainedGaussiansTest.pdf')
+    plt.clf()
+
+    generatedParams = {'constrainedGaussiansTest/gauss1/mean1' : 5300.,
+                       'constrainedGaussiansTest/gauss1/sigma1' : 20.,
+                       'constrainedGaussiansTest/gauss1Yield' : 100.,
+                       'constrainedGaussiansTest/gauss2Yield' : 100000.,
+                       'constrainedGaussiansTest/gauss3Yield' : 100000.}
+
+    # Important that the two high yield components contribute to the precision, not just fitting
+    # the mean of the small one, so check this
+
+    meanErrorOkay = model.getFloatingParameters()['constrainedGaussiansTest/gauss1/mean1'].error < 0.05
+    sigmaErrorOkay = model.getFloatingParameters()['constrainedGaussiansTest/gauss1/sigma1'].error < 0.05
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters()) and meanErrorOkay and sigmaErrorOkay
 
 if __name__ == '__main__':
 

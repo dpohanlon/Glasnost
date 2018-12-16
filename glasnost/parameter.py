@@ -77,7 +77,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
             if self.derived_ == False:
                 return self.value_
             else:
-                return eval(self.transform_)
+                return eval(self.transform_).value
         else:
             return self.priorDistribution.randomSample() # TODO: Implement me
 
