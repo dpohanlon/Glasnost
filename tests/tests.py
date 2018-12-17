@@ -512,7 +512,9 @@ def testSimpleGaussianWithExp():
     res = fitter.fit(dataGen, verbose = True)
 
     plotter = gl.Plotter(model, dataGen)
-    plotter.plotDataModel(nDataBins = 300)
+    resPlot = plotter.plotDataModel(nDataBins = 300, chiSq = True)
+    chiSq = resPlot[-1]
+
     plt.savefig('simpleGaussianWithExpTest.pdf')
     plt.clf()
 
@@ -522,7 +524,7 @@ def testSimpleGaussianWithExp():
                        'simpleGaussianWithExpTest/expYield' : 2000000.,
                        'simpleGaussianWithExpTest/gaussYield' : 1000000.}
 
-    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters()) and chiSq > 0.5 and chiSq < 1.5
 
 def testSimpleGaussianWithUniform():
 

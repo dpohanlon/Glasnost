@@ -29,7 +29,7 @@ import numpy as np
 
 class Plotter(object):
     """
-    
+
     Handle plotting data and model projections.
 
     """
@@ -90,7 +90,7 @@ class Plotter(object):
 
         plt.xlim(minVal, maxVal)
 
-        return
+        return binEdges, binnedData
 
     def plotModel(self, data, model, minVal = None, maxVal = None, fig = False, nSamples = 1000, ax = None, log = False, **kwargs):
 
@@ -161,8 +161,7 @@ class Plotter(object):
         else : plt.ylim(ymin = 0)
 
         plt.xlim(minVal, maxVal)
-
-        return fig, ax
+        plt.ylim(0, 1.1 * np.max(modelToPlot))
 
         # yields = list(model.fitYields.values())[0:]
         # for i, c in enumerate(list(model.fitComponents.values())[0:]):
@@ -173,9 +172,23 @@ class Plotter(object):
 
         # return
 
-    def plotDataModel(self, **kwargs):
+    def plotDataModel(self, chiSq = False, **kwargs):
 
-        self.plotData(data = self.data, **kwargs)
-        self.plotModel(data = self.data, model = self.model, **kwargs)
+        binEdges, binData = self.plotData(data = self.data, **kwargs)
+        retM = self.plotModel(data = self.data, model = self.model, **kwargs)
 
-        return
+        if chiSq: # return chisq/ndof
+
+            binVals = (self.dataBinning + 0.5 * (self.dataBinning[1] - self.dataBinning[0]))[:-1]
+            binWidth = (self.dataBinning[1] - self.dataBinning[0])
+
+            modelAtBins = self.model.prob(binVals) * self.model.getTotalYield() * binWidth
+
+            chiSqVal = np.sum( (binData - modelAtBins) ** 2 / modelAtBins )
+            chiSqVal /= len(binVals)
+
+            return binEdges, binData, retM, chiSqVal
+
+        else:
+
+            return binEdges, binData, retM
