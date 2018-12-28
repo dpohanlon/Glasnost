@@ -7,7 +7,8 @@ python:
 cache: pip
 
 install:
-    - pip install numpy scipy matplotlib seaborn corner quadpy emcee iminuit tqdm
+    - sudo apt-get install graphviz
+    - pip install numpy scipy matplotlib seaborn corner quadpy emcee iminuit tqdm graphviz
     - pip install codecov nose2
 
     - python setup.py install

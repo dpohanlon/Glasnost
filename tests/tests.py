@@ -206,7 +206,7 @@ def simultaneousGaussiansModel(mean1, width1, nEvents1, width2, nEvents2):
 
     model2 = gl.Model(name = 's2', initialFitYields = fitYields2, initialFitComponents = fitComponents2, minVal = 5000, maxVal = 5600)
 
-    model = gl.SimultaneousModel(name = 's', initialFitComponents = [model1, model2])
+    model = gl.SimultaneousModel(name = 's', initialFitComponents = {model1.name : model1, model2.name : model2})
 
     return model, model1, model2
 
@@ -290,7 +290,7 @@ def simultaneousModelLarge(mean1, width1, width2, a, nSignal, nBkg):
 
             model4 = gl.Model(name = 's4', initialFitYields = {gauss4.name : gauss4Yield, exp4.name : exp4Yield}, initialFitComponents = {gauss4.name : gauss4, exp4.name : exp4}, minVal = 5000, maxVal = 5600)
 
-        model = gl.SimultaneousModel(name = 's', initialFitComponents = [model1, model2, model3, model4])
+        model = gl.SimultaneousModel(name = 's', initialFitComponents = {model1.name : model1, model2.name : model2, model3.name : model3, model4.name : model4})
 
     return model, [model1, model2, model3, model4]
 
@@ -816,6 +816,16 @@ def testExternConstrainedGaussians():
     sigmaErrorOkay = model.getFloatingParameters()['externConstrainedGaussiansTest/gauss1/sigma1'].error < 0.05
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters()) and meanErrorOkay and sigmaErrorOkay
+
+def testGraphViz():
+
+    print('testGraphViz')
+
+    model = externConstrainedGaussiansModel(5300., 20., 100., 100000.)
+
+    v = gl.modelGraphViz(model, 'test')
+
+    return True
 
 def testPriorGaussians():
 
