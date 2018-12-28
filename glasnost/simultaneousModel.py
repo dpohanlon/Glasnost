@@ -12,7 +12,7 @@ class SimultaneousModel(Model):
 
     def __init__(self, initialFitComponents, data = None, name = ''):
 
-        self.fitComponentsSimultaneous = initialFitComponents.values() # List of components
+        self.fitComponentsSimultaneous = list(initialFitComponents.values()) # List of components
 
         # Don't pass fitComponents - not a dict
         # Init after setting fitComponentsSimultaneous, as init calls this method
