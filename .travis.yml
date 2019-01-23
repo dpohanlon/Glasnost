@@ -10,7 +10,7 @@ install:
     - sudo apt-get install graphviz
     - pip install codecov nose2
 
-    - python setup.py install -r requirements.txt
+    - pip install . -r requirements.txt
 
 script:
     - nose2 --with-coverage
