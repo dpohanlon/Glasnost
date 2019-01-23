@@ -5,6 +5,6 @@ setup(
    version='0.1',
    description='A fitter',
    author="Daniel O'Hanlon",
-   author_email='dpohanlon@gmail.com',
+   author_email='dohanlon@cern.ch',
    packages=['glasnost'],  #same as name
 )
