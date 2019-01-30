@@ -508,3 +508,76 @@ class StudentsT(Distribution):
         r = (1. + ((data - self.mean) / self.sigma) ** 2 / self.nu) ** (-0.5 * (self.nu + 1.))
 
         return l * r
+
+class Beta(Distribution):
+
+    """
+
+    Beta distribution defined by mean and standard-deviation. For use as a
+    prior distribution.
+
+    """
+
+    # Takes dictionary of Parameters with name mean and sigma
+    def __init__(self, parameters = None, name = 'beta'):
+
+        super(Beta, self).__init__(parameters, name)
+
+        # Names correspond to input parameter dictionary
+
+        self.meanParamName = 'mean'
+        self.sigmaParamName = 'sigma'
+
+        # Names of actual parameter objects
+        self.paramNames = [p.name for p in self.parameters.values()]
+
+    @property
+    def mean(self):
+
+        return self.parameters[self.meanParamName]
+
+    @property
+    def sigma(self):
+
+        return self.parameters[self.sigmaParamName]
+
+    @property
+    def kappa(self):
+
+        return ( (self.mean * (1. - self.mean)) / self.sigma ** 2 ) - 1.
+
+    @property
+    def alpha(self):
+
+        return self.mean * self.kappa
+
+    @property
+    def beta(self):
+
+        return (1. - self.mean) * self.kappa
+
+    def sample(self, nEvents = None, minVal = None, maxVal = None):
+
+        mode = (self.alpha - 1.) / (self.alpha + self.beta - 2.) # MPV of beta distribution
+
+        sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal, ceiling = self.prob(mode))
+
+        return sampler.sample(nEvents)
+
+    def prior(self, data):
+
+        p = 1.0 if (self.alpha > 0.0 and self.beta > 0) else 0.0
+
+        return p * np.ones(data.shape)
+
+    def lnprior(self, data):
+
+        p = 0.0 if (self.alpha > 0.0 and self.beta > 0) else -np.inf
+
+        return p * np.ones(data.shape)
+
+    def prob(self, data):
+
+        n = np.power(data, self.alpha - 1.0) * np.power(1. - data, self.beta - 1.)
+
+        return n / beta(self.alpha, self.beta)
