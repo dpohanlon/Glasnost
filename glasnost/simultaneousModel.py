@@ -12,7 +12,12 @@ class SimultaneousModel(Model):
 
     def __init__(self, initialFitComponents, data = None, name = ''):
 
+        # Unordered - the order of these does not match the input order - do not rely on this!
+        # In particular, we return samples as a dictionary keyed with model names, rather than a list.
+        # However, the order of each is the same.
+
         self.fitComponentsSimultaneous = list(initialFitComponents.values()) # List of components
+        self.fitComponentsNamesSimultaneous = list(initialFitComponents.keys()) # List of component names
 
         # Don't pass fitComponents - not a dict
         # Init after setting fitComponentsSimultaneous, as init calls this method
@@ -73,7 +78,7 @@ class SimultaneousModel(Model):
             print('Simultaneous model not configured for generating with yields')
             exit(1)
 
-        z = [c.sample(minVal = minVal, maxVal = maxVal) for c in self.fitComponentsSimultaneous]
+        z = {n : c.sample(minVal = minVal, maxVal = maxVal) for n, c in zip(self.fitComponentsNamesSimultaneous, self.fitComponentsSimultaneous)}
 
         return z
 
@@ -81,7 +86,7 @@ class SimultaneousModel(Model):
 
         # Already lnProb - just sum these to get the total likelihood
 
-        z = np.vstack([ self.fitComponentsSimultaneous[i].lnprobVal(data[i]) for i in range(len(self.fitComponentsSimultaneous)) ])
+        z = np.vstack([ self.fitComponentsSimultaneous[i].lnprobVal(data[n]) for i, n in enumerate(self.fitComponentsNamesSimultaneous) ])
         return np.sum(z)
 
     def lnprobVal(self, data):

@@ -208,7 +208,7 @@ def simultaneousGaussiansModel(mean1, width1, nEvents1, width2, nEvents2):
 
     model = gl.SimultaneousModel(name = 's', initialFitComponents = {model1.name : model1, model2.name : model2})
 
-    return model, model1, model2
+    return model, (model1.name, model1), (model2.name, model2)
 
 def simultaneousModelLarge(mean1, width1, width2, a, nSignal, nBkg):
 
@@ -292,7 +292,9 @@ def simultaneousModelLarge(mean1, width1, width2, a, nSignal, nBkg):
 
         model = gl.SimultaneousModel(name = 's', initialFitComponents = {model1.name : model1, model2.name : model2, model3.name : model3, model4.name : model4})
 
-    return model, [model1, model2, model3, model4]
+    # Return names so that these can be pulled separately from the sampled data (with scope prefixes)
+
+    return model, ((model1.name, model1), (model2.name, model2), (model3.name, model3), (model4.name, model4))
 
 def doubleGaussianFracModel(mean1, width1, frac, mean2, width2, nEvents):
 
@@ -462,7 +464,7 @@ def testSimpleGaussian():
 
     # Test generating and fitting back with the same model
 
-    model = simpleGaussianModel(4200., 20., 1000000.)
+    model = simpleGaussianModel(4200., 20., 1E6)
 
     dataGen = model.sample(minVal = 4200., maxVal = 5700.)
     fitter = gl.Fitter(model, backend = 'minuit')
@@ -475,7 +477,7 @@ def testSimpleGaussian():
 
     generatedParams = {'simpleGaussianTest/mean' : 4200.,
                        'simpleGaussianTest/sigma' : 20,
-                       'simpleGaussianTest/gaussYield' : 1000000.}
+                       'simpleGaussianTest/gaussYield' : 1E6}
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters())
 
@@ -637,13 +639,13 @@ def testSimultaneousGaussians():
     fitter = gl.Fitter(simModel, backend = 'minuit')
     res = fitter.fit(dataGen, verbose = True)
 
-    plotter1 = gl.Plotter(model1, dataGen[0])
+    plotter1 = gl.Plotter(model1[1], dataGen[model1[0]])
     plotter1.plotDataModel(nDataBins = 100)
     plt.xlim(5100, 5500)
     plt.savefig('simultaneousGaussiansTest1.pdf')
     plt.clf()
 
-    plotter2 = gl.Plotter(model2, dataGen[1])
+    plotter2 = gl.Plotter(model2[1], dataGen[model2[0]])
     plotter2.plotDataModel(nDataBins = 100)
     plt.xlim(5100, 5500)
     plt.savefig('simultaneousGaussiansTest2.pdf')
@@ -667,32 +669,35 @@ def testSimultaneousModelLarge():
     simModel, (model1, model2, model3, model4) = simultaneousModelLarge(5279., 15., 35., -0.003, nSignal, nBkg)
 
     dataGen = simModel.sample(minVal = 5000., maxVal = 5600.)
+
     fitter = gl.Fitter(simModel, backend = 'minuit')
     res = fitter.fit(dataGen, verbose = True)
 
-    plotter1 = gl.Plotter(model1, dataGen[0])
+    plotter1 = gl.Plotter(model1[1], dataGen[model1[0]])
     plotter1.plotDataModel(nDataBins = 100)
-    plt.xlim(5100, 5500)
+    plt.xlim(5000, 5600)
     plt.savefig('simultaneousModelLargeTest1.pdf')
     plt.clf()
 
-    plotter2 = gl.Plotter(model2, dataGen[1])
+    plotter2 = gl.Plotter(model2[1], dataGen[model2[0]])
     plotter2.plotDataModel(nDataBins = 100)
-    plt.xlim(5100, 5500)
+    plt.xlim(5000, 5600)
     plt.savefig('simultaneousModelLargeTest2.pdf')
     plt.clf()
 
-    plotter3 = gl.Plotter(model3, dataGen[2])
+    plotter3 = gl.Plotter(model3[1], dataGen[model3[0]])
     plotter3.plotDataModel(nDataBins = 100)
-    plt.xlim(5100, 5500)
+    plt.xlim(5000, 5600)
     plt.savefig('simultaneousModelLargeTest3.pdf')
     plt.clf()
 
-    plotter4 = gl.Plotter(model4, dataGen[3])
+    plotter4 = gl.Plotter(model4[1], dataGen[model4[0]])
     plotter4.plotDataModel(nDataBins = 100)
-    plt.xlim(5100, 5500)
+    plt.xlim(5000, 5600)
     plt.savefig('simultaneousModelLargeTest4.pdf')
     plt.clf()
+
+    v = gl.modelGraphViz(simModel, 'test')
 
     generatedParams = {'simultaneousModelLarge/a' : -0.003,
                        'simultaneousModelLarge/mean' : 5279.,
@@ -859,4 +864,5 @@ def testPriorGaussians():
 
 if __name__ == '__main__':
 
-    print(testSimultaneousModelLarge())
+    # print(testSimultaneousModelLarge())
+    print(testSimultaneousGaussians())

@@ -88,8 +88,6 @@ class Fitter(object):
 
         self.model.setData(data)
 
-        minimiser = None
-
         if self.backend in ['minuit', 'minuit-migrad-hesse', 'minos', 'minuit-minos']:
 
             # Initialise Minuit class from iminuit
@@ -103,8 +101,8 @@ class Fitter(object):
                 sys.stdout = None
 
             # Run migrad and hesse (for covariance matrix)
-            minuit.migrad()
-            minuit.hesse()
+            minuitRet = minuit.migrad()
+            hesseRet = minuit.hesse()
 
             if self.backend in ['minos', 'minuit-minos']:
 
@@ -114,9 +112,9 @@ class Fitter(object):
             # reset stdout
             sys.stdout = stdout
 
-            minimiser = minuit
+            self.postProcessMinuit(minuit)
 
-            self.postProcessMinuit(minimiser)
+            return minuit, minuitRet, hesseRet
 
         if self.backend in ['emcee']:
 
@@ -139,4 +137,4 @@ class Fitter(object):
 
             self.postProcessMCMC(minimiser)
 
-        return minimiser
+            return minimiser
