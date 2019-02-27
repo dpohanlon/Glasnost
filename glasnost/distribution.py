@@ -2,12 +2,19 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from scipy.special import erf, gamma, beta
+from scipy.special import erf, gamma, gammaincc, beta
+
+from scipy.signal import convolve, gaussian
 
 import glasnost as gl
 
 # Adaptive vectorised quadrature
 from quadpy.line_segment import integrate_adaptive
+
+# Caching of integrals
+from cachetools import cachedmethod, LRUCache
+from cachetools.keys import hashkey
+import operator
 
 class Distribution(object):
 
@@ -34,6 +41,8 @@ class Distribution(object):
 
         self.parameters = parameters
 
+        self.cache = LRUCache(maxsize = 128)
+
     def updateParameters(self, parameters):
 
         for p in parameters.items():
@@ -48,6 +57,10 @@ class Distribution(object):
 
     def getParameters(self):
         return self.parameters
+
+    @property
+    def paramsValueTuple(self):
+        return tuple(map(lambda x : x.value, self.parameters.values()))
 
     @abstractmethod
     def getParameterNames(self):
@@ -76,6 +89,11 @@ class Distribution(object):
         print('Sample not implemented for %s!' %(self.name))
 
     def integral(self, minVal, maxVal):
+
+        return self.integral_(minVal, maxVal, self.paramsValueTuple)
+
+    # @cachedmethod(cache = operator.attrgetter('cache'), key = hashkey)
+    def integral_(self, minVal, maxVal, valTuple):
 
         # Might need to fiddle with the tolerance sometimes
         int, err = integrate_adaptive(self.prob, [minVal, maxVal], 1E-5)
@@ -122,7 +140,6 @@ class Gaussian(Distribution):
 
     # Takes dictionary of Parameters with name mean and sigma
     def __init__(self, parameters = None, name = 'gaussian'):
-
         super(Gaussian, self).__init__(parameters, name)
 
         # Names correspond to input parameter dictionary
@@ -182,10 +199,20 @@ class Gaussian(Distribution):
 
         # Oversample and then truncate
         genEvents = nEvents * int(1./integral)
-        samples = np.random.normal(self.mean, self.sigma, size = int(genEvents))
-        samples = samples[(samples > minVal) & (samples < maxVal)]
 
-        return samples
+        # ...which is a good idea, unless we're generating in the tail
+        # in which case, just do accept/reject
+
+        if genEvents < 50 * nEvents:
+
+            samples = np.random.normal(self.mean, self.sigma, size = int(genEvents))
+            return  samples[(samples > minVal) & (samples < maxVal)]
+
+        else:
+
+            sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal,
+                                                  ceiling = max(self.prob(minVal), self.prob(maxVal)))
+            return sampler.sample(nEvents)
 
     def cdf(self, x):
 
@@ -193,12 +220,17 @@ class Gaussian(Distribution):
 
         return 0.5 * (1 + erf(erfArg))
 
-    def integral(self, minVal, maxVal):
+    @cachedmethod(cache = operator.attrgetter('cache'), key = hashkey)
+    def integral_(self, minVal, maxVal, valTuple):
 
         cdfMin = self.cdf(minVal)
         cdfMax = self.cdf(maxVal)
 
         return cdfMax - cdfMin
+
+    def integral(self, minVal, maxVal):
+
+        return self.integral_(minVal, maxVal, self.paramsValueTuple)
 
     def prior(self, data):
 
@@ -269,6 +301,11 @@ class Uniform(Distribution):
         else : return np.random.uniform(minVal, maxVal, size = int(nEvents))
 
     def integral(self, minVal, maxVal):
+
+        return self.integral_(minVal, maxVal, self.paramsValueTuple)
+
+    @cachedmethod(cache = operator.attrgetter('cache'), key = hashkey)
+    def integral_(self, minVal, maxVal, valTuple):
 
         if minVal <= self.min and maxVal >= self.max:
             return 1.0
@@ -447,6 +484,11 @@ class Exponential(Distribution):
 
     def integral(self, minVal, maxVal):
 
+        return self.integral_(minVal, maxVal, self.paramsValueTuple)
+
+    @cachedmethod(cache = operator.attrgetter('cache'), key = hashkey)
+    def integral_(self, minVal, maxVal, valTuple):
+
         if minVal <= self.min and maxVal >= self.max:
             return 1.0
         elif maxVal <= self.min or minVal >= self.max:
@@ -581,3 +623,99 @@ class Beta(Distribution):
         n = np.power(data, self.alpha - 1.0) * np.power(1. - data, self.beta - 1.)
 
         return n / beta(self.alpha, self.beta)
+
+class ARGaus(Distribution):
+
+    """
+
+    Generalised ARGUS distribution convoluted with a zero mean Gaussian resolution function.
+
+    """
+
+    # Takes dictionary of Parameters with name mean and sigma
+    def __init__(self, parameters = None, name = 'argaus'):
+
+        super(ARGaus, self).__init__(parameters, name)
+
+        # Names correspond to input parameter dictionary
+
+        self.cParamName = 'c'
+        self.pParamName = 'p'
+        self.chiParamName = 'chi'
+
+        self.sigmaParamName = 'sigma'
+
+        # Names of actual parameter objects
+        self.paramNames = [p.name for p in self.parameters.values()]
+
+    @property
+    def c(self):
+
+        return self.parameters[self.cParamName]
+
+    @property
+    def p(self):
+
+        return self.parameters[self.pParamName]
+
+    @property
+    def chi(self):
+
+        return self.parameters[self.chiParamName]
+
+    @property
+    def sigma(self):
+
+        return self.parameters[self.sigmaParamName]
+
+    def prob(self, data):
+
+        # print(data)
+        print(data.shape)
+
+        # For generalised ARGUS
+        c = self.c.value_
+        p = self.p.value_
+        chi = self.chi.value_
+
+        # For Gaussian resolution
+        s = self.sigma.value_
+
+        oneMinusChiOverCSq = (1. - (data ** 2) / (c ** 2))
+
+        t1n = np.power(2., -p) * np.power(chi, 2. * (p + 1.))
+        t1d = gamma(p + 1.) - gammaincc(p + 1., 0.5 * chi ** 2) * gamma(p + 1.)
+
+        t2 = (data / (c ** 2)) * np.power(oneMinusChiOverCSq, p)
+        t3 = np.exp( -0.5 * chi ** 2 * oneMinusChiOverCSq )
+
+        print(t1n.shape, t1d.shape, t2.shape, t3.shape)
+
+        argus = (t1n / t1d) * t2 * t3
+
+        # ARGUS undefined above c, but we want to convolve, so replace nans with zero
+        argus[np.isnan(argus)] = 0.
+
+        return convolve(argus, gaussian(len(data), s), mode = 'same', method = 'direct')
+
+    def hasDefaultPrior(self):
+
+        return True
+
+    def sample(self, nEvents = None, minVal = None, maxVal = None):
+        sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal, ceiling = 0.001)
+
+        return sampler.sample(nEvents)
+
+    def prior(self, data):
+
+        p = 1.0 if self.sigma > 0.0 else 0.0
+
+        return p * np.ones(data.shape)
+
+    def lnprior(self, data):
+
+        p = 0.0 if self.sigma > 0.0 else -np.inf
+
+        return p * np.ones(data.shape)
+#

@@ -458,6 +458,26 @@ def priorGaussiansModel(mean, width, nEvents1, nEventsOther):
 
     return model
 
+def simpleARGausModel(c, p, chi, sigma, nEvents):
+
+    with gl.name_scope('simpleARGausTest'):
+
+        cA = gl.Parameter(c, name = 'c', minVal = 4800., maxVal = 5700.)
+        pA = gl.Parameter(p, name = 'p', minVal = 0., maxVal = 10.)
+        chiA = gl.Parameter(chi, name = 'chi', minVal = 0., maxVal = 50.)
+        sigmaA = gl.Parameter(sigma, name = 'sigma', minVal = 0., maxVal = 50.)
+
+        argaus = gl.ARGaus({'c' : cA, 'chi' : chiA, 'p' :pA, 'sigma' : sigmaA},)
+
+        argausYield = gl.Parameter(nEvents, name = 'argausYield', minVal = 0.8 * nEvents, maxVal = 1.2 * nEvents)
+
+    fitYields = {argaus.name : argausYield}
+    fitComponents = {argaus.name : argaus}
+
+    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4800, maxVal = 5700)
+
+    return model
+
 def testSimpleGaussian():
 
     print('testSimpleGaussian')
@@ -861,8 +881,32 @@ def testPriorGaussians():
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters()) and meanErrorOkay
 
+# def testSimpleARGaus():
+#
+#     print('testSimpleARGaus')
+#
+#     # Test generating and fitting back with the same model
+#
+#     model = simpleARGausModel(5400., 0.5, 10.0, 50., 100000)
+#
+#     dataGen = model.sample(minVal = 4800., maxVal = 5700.)
+#
+#     plt.hist(dataGen, bins = 50)
+#     plt.savefig('dataHist.pdf')
+#
+#     print(dataGen)
+#     print(dataGen.shape)
+#     exit(0)
+#
+#     fitter = gl.Fitter(model, backend = 'minuit')
+#     res = fitter.fit(dataGen, verbose = True)
+#
+#     plotter = gl.Plotter(model, dataGen)
+#     plotter.plotDataModel(nDataBins = 100)
+#     plt.savefig('simpleARGausTest.pdf')
+#     plt.clf()
 
 if __name__ == '__main__':
 
-    # print(testSimultaneousModelLarge())
-    print(testSimultaneousGaussians())
+    print(testSimultaneousModelLarge())
+    # print(testSimpleARGaus())
