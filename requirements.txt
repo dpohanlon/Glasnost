@@ -8,3 +8,4 @@ emcee
 iminuit
 tqdm
 graphviz
+cachetools
