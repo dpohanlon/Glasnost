@@ -92,7 +92,7 @@ class Distribution(object):
 
         return self.integral_(minVal, maxVal, self.paramsValueTuple)
 
-    # @cachedmethod(cache = operator.attrgetter('cache'), key = hashkey)
+    @cachedmethod(cache = operator.attrgetter('cache'), key = hashkey)
     def integral_(self, minVal, maxVal, valTuple):
 
         # Might need to fiddle with the tolerance sometimes
