@@ -1,6 +1,6 @@
 from glasnost.distribution import Distribution
 
-from iminuit.util import Struct
+from iminuit.util import make_func_code
 
 import numpy as np
 
@@ -80,9 +80,7 @@ class Model(Distribution):
         # Gets screwed up if parameters are changed between fixed and floating
         # Make sure this is propagated (somehow?)
 
-        self.func_code = Struct(co_varnames = self.floatingParameterNames,
-                                co_argcount = len(self.floatingParameterNames)
-                                )
+        self.func_code = make_func_code(self.floatingParameterNames)
 
     # Only floating
     def getComponentFloatingParameterNames(self):
