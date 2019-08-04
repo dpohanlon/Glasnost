@@ -3,7 +3,7 @@ scipy
 matplotlib
 seaborn
 corner
-quadpy
+quadpy==0.12.11
 emcee
 iminuit>=1.3.5
 tqdm
