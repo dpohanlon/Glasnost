@@ -80,6 +80,8 @@ class Model(Distribution):
         # Gets screwed up if parameters are changed between fixed and floating
         # Make sure this is propagated (somehow?)
 
+        # Also screws up shelving
+
         self.func_code = make_func_code(self.floatingParameterNames)
 
     # Only floating
@@ -416,6 +418,9 @@ class Model(Distribution):
 
         for i, n in enumerate(names):
             self.parameters[n].updateValue(params[i])
+
+            if not self.parameters[n].rangeOK:
+                return -np.inf
 
         return self.lnprobVal(self.data)
 
