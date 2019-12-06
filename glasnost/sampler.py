@@ -7,12 +7,12 @@ class RejectionSampler(object):
 
     """
 
-    def __init__(self, function, min, max, ceiling = 1.0):
+    def __init__(self, function, minVal, maxVal, ceiling = 1.0):
 
         self.function = function
 
-        self.min = min
-        self.max = max
+        self.min = minVal
+        self.max = maxVal
 
         self.ceiling = ceiling
 
@@ -30,9 +30,9 @@ class RejectionSampler(object):
             fVals = self.function(xVals)
             yVals = np.random.uniform(0, self.ceiling, size = blockSize)
 
-            samples.extend(list(xVals[yVals <= fVals]))
-
             if len(fVals[fVals > self.ceiling]) > 0:
                 self.ceiling = np.max(fVals)
+            else:
+                samples.extend(list(xVals[yVals <= fVals]))
 
         return samples[:nSamples]
