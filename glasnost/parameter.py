@@ -44,6 +44,8 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
         self.error_ = None
 
+        self.rangeOK = self.testRangeOK()
+
     def __repr__(self):
         if not self.error_:
             if not (self.min or self.max):
@@ -78,8 +80,12 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
         else:
             return eval(self.transform_).value
 
+    def testRangeOK(self):
+        return not ( (self.min and self.value < self.min) or (self.max and self.value > self.max) )
+
     def updateValue(self, value):
         self.value_ = value
+        self.rangeOK = self.testRangeOK()
 
     @property
     def error(self):
