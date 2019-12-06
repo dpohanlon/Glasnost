@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from scipy.special import erf, gamma, gammaincc, betas, betainc
+from scipy.special import erf, gamma, gammaincc, beta, betainc
 
 from scipy.signal import convolve, gaussian
 
