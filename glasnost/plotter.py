@@ -19,8 +19,7 @@ rcParams['ytick.direction'] = 'in'
 
 rcParams.update({'figure.autolayout': True})
 
-# from seaborn import apionly as sns # Deprecated?
-import seaborn.apionly as sns
+import seaborn as sns
 
 # colours = sns.light_palette((210, 90, 60), input="husl")
 # colours = ['#ff3000', '#ff8f00', '#14b8b8']
@@ -86,7 +85,7 @@ class Plotter(object):
         f.errorbar(binEdges, binnedData, xerr = dataXErrs, yerr = dataYErrs, **self.errorbarConfig)
 
         if log : f.yscale("log", nonposy='clip')
-        else : plt.ylim(ymin = 0)
+        else : plt.ylim(bottom = 0)
 
         plt.xlim(minVal, maxVal)
 
@@ -158,16 +157,16 @@ class Plotter(object):
                 plt.plot(x, c.prob(x) * yields[n] * binWidth / norm[n], color = colours[i], **self.componentCurveConfig)
 
         if log : f.yscale("log", nonposy='clip')
-        else : plt.ylim(ymin = 0)
+        else : plt.ylim(bottom = 0)
 
         plt.xlim(minVal, maxVal)
-        plt.ylim(0, 1.1 * np.max(modelToPlot))
+        plt.ylim(0, 1.2 * np.max(modelToPlot))
 
         # yields = list(model.fitYields.values())[0:]
         # for i, c in enumerate(list(model.fitComponents.values())[0:]):
             # f.fill_between(x, 0, c.prob(x) * yields[i] * binWidth, color = colours[i])
 
-        # plt.ylim(ymin = 0)
+        # plt.ylim(bottom = 0)
         # plt.xlim(minVal, maxVal)
 
         # return
