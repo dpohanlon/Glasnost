@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from scipy.special import erf, gamma, gammaincc, beta
+from scipy.special import erf, gamma, gammaincc, betas, betainc
 
 from scipy.signal import convolve, gaussian
 
@@ -538,6 +538,15 @@ class StudentsT(Distribution):
 
         return self.parameters[self.sigmaParamName]
 
+    def lnprior(self, data):
+
+        p = 0.0 if self.nu > 1.0 else -np.inf
+
+        if np.isfinite(p):
+            p = 0.0 if self.sigma > 0.0 else -np.inf
+
+        return p * np.ones(data.shape)
+
     def sample(self, nEvents = None, minVal = None, maxVal = None):
         sampler = gl.sampler.RejectionSampler(self.prob, minVal, maxVal, ceiling = self.prob(self.mean))
 
@@ -545,11 +554,32 @@ class StudentsT(Distribution):
 
     def prob(self, data):
 
-        # Slightly faster and simpler than gamma definition
-        l = 1. / (np.sqrt(self.nu) * beta(0.5, 0.5 * self.nu))
+        l = 1. / ( np.abs(self.sigma) * np.sqrt(self.nu * np.pi) * gamma(0.5 * self.nu) / gamma(0.5 * (self.nu + 1)))
         r = (1. + ((data - self.mean) / self.sigma) ** 2 / self.nu) ** (-0.5 * (self.nu + 1.))
 
         return l * r
+
+    def cdf(self, x):
+        # Following the TF-Prob implementation
+
+        y = (x - self.mean) / self.sigma
+        x_t = self.nu / (y**2. + self.nu)
+
+        neg_cdf = 0.5 * betainc(0.5 * self.nu, 0.5, x_t)
+
+        return neg_cdf if y < 0. else 1. - neg_cdf
+
+    def integral(self, minVal, maxVal):
+
+        return self.integral_(minVal, maxVal, self.paramsValueTuple)
+
+    @cachedmethod(cache = operator.attrgetter('cache'), key = hashkey)
+    def integral_(self, minVal, maxVal, valTuple):
+
+        cdfMin = self.cdf(minVal)
+        cdfMax = self.cdf(maxVal)
+
+        return cdfMax - cdfMin
 
 class Beta(Distribution):
 
