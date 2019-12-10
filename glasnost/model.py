@@ -155,10 +155,10 @@ class Model(Distribution):
         # Fill prior for ranges, doesn't depend on data
         # (Only if these ranges aren't none)
 
-        if any([(y.min and y.value_ < y.min) or (y.max and y.value_ > y.max) for y in self.fitYields.values()]):
+        if any([(y.value_ < y.min) or (y.value_ > y.max) for y in self.fitYields.values()]):
             return -np.inf
 
-        if any([(y.min and y.value_ < y.min) or (y.max and y.value_ > y.max) for y in self.fitFracs.values()]):
+        if any([(y.value_ < y.min) or (y.value_ > y.max) for y in self.fitFracs.values()]):
             return -np.inf
 
         # Use np.zeros(1) as dummy data -> won't be used anyway if it's inf (which is true for

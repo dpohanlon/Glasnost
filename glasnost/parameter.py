@@ -31,14 +31,14 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
         self.value_ = self.initialValue if not self.derived_ else eval(self.transform_)
 
+        self.priorDistribution = priorDistribution
+
+        self.fixed_ = fixed or (self.min == None and self.max == None) or self.transform_ != None
+
         # Leave these unconstrained unless we have to have strict minima and maxima
 
         self.min = minVal #if minVal is not None else self.initialValue - 3. * self.initialValue
         self.max = maxVal #if maxVal is not None else self.initialValue + 3. * self.initialValue
-
-        self.priorDistribution = priorDistribution
-
-        self.fixed_ = fixed or (self.min == None and self.max == None) or self.transform_ != None
 
         # Can envision blinding, errors, etc
 
@@ -48,12 +48,12 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     def __repr__(self):
         if not self.error_:
-            if not (self.min or self.max):
+            if self.fixed_:
                 return "%s: %s" % (self.name, self.value)
             else:
                 return "%s: %s, [%s, %s]" % (self.name, self.value, self.min, self.max)
         else:
-            if not (self.min or self.max):
+            if self.fixed_:
                 return "%s: %s +/- %s" % (self.name, self.value, self.error_)
             else:
                 return "%s: %s +/- %s, [%s, %s]" % (self.name, self.value, self.error_, self.min, self.max)
