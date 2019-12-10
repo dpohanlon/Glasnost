@@ -33,7 +33,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
         self.priorDistribution = priorDistribution
 
-        self.fixed_ = fixed or (self.min == None and self.max == None) or self.transform_ != None
+        self.fixed_ = fixed or (minVal == None and maxVal == None) or self.transform_ != None
 
         # Leave these unconstrained unless we have to have strict minima and maxima
 
