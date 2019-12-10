@@ -663,7 +663,7 @@ class ARGaus(Distribution):
     """
 
     # Takes dictionary of Parameters with name mean and sigma
-    def __init__(self, parameters = None, name = 'argaus'):
+    def __init__(self, parameters = None, name = 'argaus', minVal = 0, maxVal = 1E8, gridSize = 1000):
 
         super(ARGaus, self).__init__(parameters, name)
 
@@ -674,6 +674,10 @@ class ARGaus(Distribution):
         self.chiParamName = 'chi'
 
         self.sigmaParamName = 'sigma'
+
+        self.minVal = minVal
+        self.maxVal = maxVal
+        self.gridSize = 1000
 
         # Names of actual parameter objects
         self.paramNames = [p.name for p in self.parameters.values()]
@@ -700,8 +704,7 @@ class ARGaus(Distribution):
 
     def prob(self, data):
 
-        # print(data)
-        print(data.shape)
+        grid = np.linspace(self.minVal, self.maxVal, self.gridSize)
 
         # For generalised ARGUS
         c = self.c.value_
@@ -711,22 +714,33 @@ class ARGaus(Distribution):
         # For Gaussian resolution
         s = self.sigma.value_
 
-        oneMinusChiOverCSq = (1. - (data ** 2) / (c ** 2))
+        oneMinusChiOverCSq = (1. - (grid ** 2) / (c ** 2))
 
         t1n = np.power(2., -p) * np.power(chi, 2. * (p + 1.))
         t1d = gamma(p + 1.) - gammaincc(p + 1., 0.5 * chi ** 2) * gamma(p + 1.)
 
-        t2 = (data / (c ** 2)) * np.power(oneMinusChiOverCSq, p)
+        t2 = (grid / (c ** 2)) * np.power(oneMinusChiOverCSq, p)
         t3 = np.exp( -0.5 * chi ** 2 * oneMinusChiOverCSq )
-
-        print(t1n.shape, t1d.shape, t2.shape, t3.shape)
 
         argus = (t1n / t1d) * t2 * t3
 
         # ARGUS undefined above c, but we want to convolve, so replace nans with zero
         argus[np.isnan(argus)] = 0.
+        # if np.isnan(argus):
+            # argus = 0
 
-        return convolve(argus, gaussian(len(data), s), mode = 'same', method = 'direct')
+        # print(np.array(argus).reshape(-1, 1).shape, gaussian(1, s).shape)
+
+        conv = convolve(argus, gaussian(1000, s), mode = 'same', method = 'fft')
+        # return convolve(np.array(argus).reshape(-1, 1), gaussian(1, s).reshape(-1, 1), mode = 'same', method = 'direct')
+        # return argus
+
+        # CHECK BOUNDS
+        # LERP
+
+        pos = np.searchsorted(grid, data)
+
+        return conv[pos]
 
     def hasDefaultPrior(self):
 
@@ -748,4 +762,47 @@ class ARGaus(Distribution):
         p = 0.0 if self.sigma > 0.0 else -np.inf
 
         return p * np.ones(data.shape)
-#
+
+if __name__ == '__main__':
+
+    import matplotlib as mpl
+
+    mpl.use('Agg')
+
+    import matplotlib.pyplot as plt
+
+    plt.style.use(['fivethirtyeight', 'seaborn-whitegrid', 'seaborn-ticks'])
+
+    from matplotlib import rcParams
+    from matplotlib import gridspec
+    import matplotlib.ticker as plticker
+
+    from matplotlib import cm
+
+    rcParams['axes.facecolor'] = 'FFFFFF'
+    rcParams['savefig.facecolor'] = 'FFFFFF'
+    rcParams['xtick.direction'] = 'in'
+    rcParams['ytick.direction'] = 'in'
+
+    rcParams.update({'figure.autolayout': True})
+
+    from parameter import Parameter
+
+    c = Parameter(5400., 'c')
+    p = Parameter(0.5, 'p')
+    chi = Parameter(10., 'chi')
+    s = Parameter(30., 's')
+
+    a = ARGaus(parameters = {'c' : c, 'p': p, 'chi' : chi, 'sigma' : s},
+               minVal = 5000, maxVal = 5800, gridSize = 1000)
+
+    data = a.sample(1000000, 5000, 5800)
+    plt.hist(data, bins = 200)
+    plt.savefig('argaus.pdf')
+    plt.clf()
+
+    x = np.linspace(5000, 5500, 1000)
+    # x = np.array(sorted(np.random.uniform(5000, 5500, 10000)))
+    l = a.prob(x)
+    plt.plot(x, l, lw = 1.0)
+    plt.savefig('argaus_plot.pdf')
