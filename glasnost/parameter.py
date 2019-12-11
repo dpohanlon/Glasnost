@@ -47,7 +47,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
         self.error_ = None
 
-        self.rangeOK = self.testRangeOK()
+        self.rangeOK = self.fixed_ or self.testRangeOK()
 
     def __repr__(self):
         if not self.error_:
@@ -93,7 +93,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     def updateValue(self, value):
         self.value_ = value
-        self.rangeOK = self.testRangeOK()
+        self.rangeOK = self.fixed_ or self.testRangeOK()
 
     @property
     def error(self):
