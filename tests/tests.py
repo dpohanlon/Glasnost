@@ -170,7 +170,7 @@ def doubleGaussianYieldsModel(mean1, width1, nEvents1, mean2, width2, nEvents2):
     fitYields = {gauss1.name : gauss1Yield, gauss2.name : gauss2Yield}
     fitComponents = {gauss1.name : gauss1, gauss2.name : gauss2}
 
-    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 5300, maxVal = 5700)
+    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4800, maxVal = 5700)
 
     return model
 
@@ -302,25 +302,25 @@ def doubleGaussianFracModel(mean1, width1, frac, mean2, width2, nEvents):
 
         with gl.name_scope('gauss1'):
 
-            m1 = gl.Parameter(mean1, name = 'mean', minVal = 4200, maxVal = 5700)
-            s1 = gl.Parameter(width1, name = 'sigma', minVal = 0, maxVal = width1 * 5)
+            m1 = gl.Parameter(mean1, name = 'mean', minVal = 4200., maxVal = 5700.)
+            s1 = gl.Parameter(width1, name = 'sigma', minVal = 0., maxVal = width1 * 5.)
 
             gauss1 = gl.Gaussian({'mean' : m1, 'sigma' : s1})
 
         with gl.name_scope('gauss2'):
 
-            m2 = gl.Parameter(mean2, name = 'mean', minVal = 4200, maxVal = 5700)
-            s2 = gl.Parameter(width2, name = 'sigma', minVal = 0, maxVal = width2 * 5)
+            m2 = gl.Parameter(mean2, name = 'mean', minVal = 4200., maxVal = 5700.)
+            s2 = gl.Parameter(width2, name = 'sigma', minVal = 0., maxVal = width2 * 5.)
 
             gauss2 = gl.Gaussian({'mean' : m2, 'sigma' : s2})
 
         gaussFrac = gl.Parameter(frac, name = 'gaussFrac', minVal = 0.0, maxVal = 1.0)
         totalYield = gl.Parameter(nEvents, name = 'totalYield', minVal = 0.8 * nEvents, maxVal = 1.2 * nEvents)
 
-    fitComponents = {gauss1.name : gauss1, gauss2.name : gauss2}
-    doubleGaussian = gl.Model(initialFitFracs = {gauss1.name : gaussFrac}, initialFitComponents = fitComponents, minVal = 5280, maxVal = 5700)
+        fitComponents = {gauss1.name : gauss1, gauss2.name : gauss2}
+        doubleGaussian = gl.Model(initialFitFracs = {gauss1.name : gaussFrac}, initialFitComponents = fitComponents, minVal = 4200., maxVal = 5700.)
 
-    model = gl.Model(initialFitYields = {doubleGaussian.name : totalYield}, initialFitComponents = {doubleGaussian.name : doubleGaussian}, minVal = 5280, maxVal = 5700)
+    model = gl.Model(initialFitYields = {doubleGaussian.name : totalYield}, initialFitComponents = {doubleGaussian.name : doubleGaussian}, minVal = 4200., maxVal = 5700.)
 
     return model
 
@@ -458,6 +458,81 @@ def priorGaussiansModel(mean, width, nEvents1, nEventsOther):
 
     return model
 
+def hierarchicalGaussiansModel(mean1, delta1, delta2, delta3, width1, nEvents1, width2, nEvents2, width3, nEvents3):
+
+    with gl.name_scope('hierarchicalGaussiansModel'):
+
+        # constraintWidth = gl.Parameter(1.0, name = 'constraintWidth', minVal = 0.01, maxVal = 20)
+
+        latentMean = gl.Parameter(mean1, name = 'latentMean', minVal = 5100., maxVal = 5500.)
+
+        # deltaConstraint = gl.Gaussian({'mean' : 0.0, 'sigma' : 0.5})
+        # deltaConstraint = gl.Gaussian({'mean' : 0.0, 'sigma' : constraintWidth})
+
+        with gl.name_scope('gauss1'):
+
+            deltaConstraint = gl.Gaussian({'mean' : 0.0, 'sigma' : 0.5})
+
+            md1 = gl.Parameter(delta1, name = 'dMean', minVal = -200., maxVal = 200.)
+            md1.priorDistribution = deltaConstraint
+
+            s1 = gl.Parameter(width1, name = 'sigma', minVal = 0.1, maxVal = width1 * 1.5, fixed = True)
+
+            mean1 = gl.Parameter('latentMean + md1', name = 'mean', minVal = 5250., maxVal = 5400., latentMean = latentMean, md1 = md1)
+
+            gauss1 = gl.Gaussian({'mean' : mean1, 'sigma' : s1})
+
+            gauss1Yield = gl.Parameter(nEvents1, name = 'gauss1Yield', minVal = 0.8 * nEvents1, maxVal = 1.2 * nEvents1)
+
+        with gl.name_scope('gauss2'):
+
+            deltaConstraint = gl.Gaussian({'mean' : 0.0, 'sigma' : 0.5})
+
+            md2 = gl.Parameter(delta2, name = 'dMean', minVal = -200., maxVal = 200.)
+            md2.priorDistribution = deltaConstraint
+
+            s2 = gl.Parameter(width2, name = 'sigma', minVal = 0.1, maxVal = width2 * 1.5, fixed = True)
+
+            mean2 = gl.Parameter('latentMean + md2', name = 'mean', minVal = 5250., maxVal = 5400., latentMean = latentMean, md2 = md2)
+
+            gauss2 = gl.Gaussian({'mean' : mean2, 'sigma' : s2})
+
+            gauss2Yield = gl.Parameter(nEvents2, name = 'gauss2Yield', minVal = 0.8 * nEvents2, maxVal = 1.2 * nEvents2)
+
+        with gl.name_scope('gauss3'):
+
+            deltaConstraint = gl.Gaussian({'mean' : 0.0, 'sigma' : 0.5})
+
+            md3 = gl.Parameter(delta3, name = 'dMean', minVal = -200., maxVal = 200.)
+            md3.priorDistribution = deltaConstraint
+
+            s3 = gl.Parameter(width3, name = 'sigma', minVal = 0.1, maxVal = width3 * 1.5, fixed = True)
+
+            mean3 = gl.Parameter('latentMean + md3', name = 'mean', minVal = 5250., maxVal = 5400., latentMean = latentMean, md3 = md3)
+
+            gauss3 = gl.Gaussian({'mean' : mean3, 'sigma' : s3})
+
+            gauss3Yield = gl.Parameter(nEvents3, name = 'gauss2Yield', minVal = 0.8 * nEvents3, maxVal = 1.2 * nEvents3)
+
+    fitYields1 = {gauss1.name : gauss1Yield}
+    fitComponents1 = {gauss1.name : gauss1}
+
+    model1 = gl.Model(name = 's1', initialFitYields = fitYields1, initialFitComponents = fitComponents1, minVal = 5000, maxVal = 5600)
+
+    fitYields2 = {gauss2.name : gauss2Yield}
+    fitComponents2 = {gauss2.name : gauss2}
+
+    model2 = gl.Model(name = 's2', initialFitYields = fitYields2, initialFitComponents = fitComponents2, minVal = 5000, maxVal = 5600)
+
+    fitYields3 = {gauss3.name : gauss3Yield}
+    fitComponents3 = {gauss3.name : gauss3}
+
+    model3 = gl.Model(name = 's3', initialFitYields = fitYields3, initialFitComponents = fitComponents3, minVal = 5000, maxVal = 5600)
+
+    model = gl.SimultaneousModel(name = 's', initialFitComponents = {model1.name : model1, model2.name : model2, model3.name : model3})
+
+    return model, (model1.name, model1), (model2.name, model2), (model3.name, model3)
+
 def simpleARGausModel(c, p, chi, sigma, nEvents):
 
     with gl.name_scope('simpleARGausTest'):
@@ -467,14 +542,14 @@ def simpleARGausModel(c, p, chi, sigma, nEvents):
         chiA = gl.Parameter(chi, name = 'chi', minVal = 0., maxVal = 50.)
         sigmaA = gl.Parameter(sigma, name = 'sigma', minVal = 0., maxVal = 50.)
 
-        argaus = gl.ARGaus({'c' : cA, 'chi' : chiA, 'p' :pA, 'sigma' : sigmaA},)
+        argaus = gl.ARGaus({'c' : cA, 'chi' : chiA, 'p' :pA, 'sigma' : sigmaA}, minVal = 4800., maxVal = 5700., gridSize = 10000)
 
         argausYield = gl.Parameter(nEvents, name = 'argausYield', minVal = 0.8 * nEvents, maxVal = 1.2 * nEvents)
 
     fitYields = {argaus.name : argausYield}
     fitComponents = {argaus.name : argaus}
 
-    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4800, maxVal = 5700)
+    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4800., maxVal = 5700.)
 
     return model
 
@@ -679,6 +754,70 @@ def testSimultaneousGaussians():
 
     return parameterPullsOkay(generatedParams, simModel.getFloatingParameters())
 
+def testHierarchicalGaussians():
+
+    print('testHierarchicalGaussians')
+
+    # simModel, model1, model2, model3 = hierarchicalGaussiansModel(mean1 = 5279., delta1 = 10., delta2 = -1., delta3 = 2., width1 = 40., nEvents1 = 100., width2 = 20., nEvents2 = 1000., width3 = 10., nEvents3 = 2000.)
+    simModel, model1, model2, model3 = hierarchicalGaussiansModel(mean1 = 5279., delta1 = 0., delta2 = 0., delta3 = 0., width1 = 40., nEvents1 = 100., width2 = 20., nEvents2 = 1000., width3 = 10., nEvents3 = 2000.)
+    dataGen = simModel.sample(minVal = 4800., maxVal = 5600.)
+
+    # simModel, model1, model2, model3 = hierarchicalGaussiansModel(mean1 = 5279., delta1 = 0., delta2 = 0., delta3 = 0., width1 = 40., nEvents1 = 100., width2 = 20., nEvents2 = 1000., width3 = 10., nEvents3 = 2000.)
+
+    fitter = gl.Fitter(simModel, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    print(res[1])
+    # fitter = gl.Fitter(simModel, backend = 'emcee')
+    # res = fitter.fit(dataGen, verbose = True, nIterations = 1000, nWalkers = 20)
+
+    print(list(simModel.getFloatingParameters().keys()))
+    pprint(simModel.getFloatingParameters()['hierarchicalGaussiansModel/latentMean'])
+    # pprint(simModel.getFloatingParameters()['hierarchicalGaussiansModel/constraintWidth'])
+    print('')
+    pprint(simModel.getFloatingParameters()['hierarchicalGaussiansModel/gauss1/dMean'])
+    pprint(simModel.getFloatingParameters()['hierarchicalGaussiansModel/gauss2/dMean'])
+    pprint(simModel.getFloatingParameters()['hierarchicalGaussiansModel/gauss3/dMean'])
+    print('')
+    pprint(simModel.getFloatingParameters()['hierarchicalGaussiansModel/latentMean'] + simModel.getFloatingParameters()['hierarchicalGaussiansModel/gauss1/dMean'])
+    pprint(simModel.getFloatingParameters()['hierarchicalGaussiansModel/latentMean'] + simModel.getFloatingParameters()['hierarchicalGaussiansModel/gauss2/dMean'])
+    pprint(simModel.getFloatingParameters()['hierarchicalGaussiansModel/latentMean'] + simModel.getFloatingParameters()['hierarchicalGaussiansModel/gauss3/dMean'])
+
+    plotter1 = gl.Plotter(model1[1], dataGen[model1[0]])
+    plotter1.plotDataModel(nDataBins = 50, minVal = 5100, maxVal = 5400)
+    plt.xlim(5100, 5400)
+    plt.savefig('hierarchicalGaussiansTest1.pdf')
+    plt.clf()
+
+    plotter2 = gl.Plotter(model2[1], dataGen[model2[0]])
+    plotter2.plotDataModel(nDataBins = 50, minVal = 5100, maxVal = 5400)
+    plt.xlim(5100, 5400)
+    plt.savefig('hierarchicalGaussiansTest2.pdf')
+    plt.clf()
+
+    plotter3 = gl.Plotter(model3[1], dataGen[model3[0]])
+    plotter3.plotDataModel(nDataBins = 50, minVal = 5100, maxVal = 5400)
+    plt.xlim(5100, 5400)
+    plt.savefig('hierarchicalGaussiansTest3.pdf')
+    plt.clf()
+
+    # fig = plt.figure(figsize = (16, 12))
+    #
+    # samples = res.chain[:, 200:, :].reshape((-1, simModel.getNFloatingParameters()))
+    # c = corner.corner(samples, lw = 1.0)
+    # c.savefig('hierarchicalGaussiansTestCorner.pdf')
+    # plt.clf()
+
+    # generatedParams = {'hierarchicalGaussiansModel/latentMean' : 5279.,
+    #                    'hierarchicalGaussiansModel/gauss1/sigma' : 15.,
+    #                    'hierarchicalGaussiansModel/gauss2/sigma' : 30.,
+    #                    'hierarchicalGaussiansModel/gauss1/gauss1Yield' : 5000.,
+    #                    'hierarchicalGaussiansModel/gauss2/gauss2Yield' : 3000.}
+
+    # return parameterPullsOkay(generatedParams, simModel.getFloatingParameters())
+
+    return 0
+
 def testSimultaneousModelLarge():
 
     print('testSimultaneousModelLarge')
@@ -740,7 +879,7 @@ def testDoubleGaussianYields():
 
     model = doubleGaussianYieldsModel(5279., 20., 50000, 5379., 20., 30000)
 
-    dataGen = model.sample(minVal = 5300., maxVal = 5700.)
+    dataGen = model.sample(minVal = 4800., maxVal = 5700.)
     fitter = gl.Fitter(model, backend = 'minuit')
     res = fitter.fit(dataGen, verbose = True)
 
@@ -764,13 +903,48 @@ def testDoubleGaussianFrac():
 
     model = doubleGaussianFracModel(5279., 15., 0.75, 5379., 20., 10000.)
 
-    dataGen = model.sample(minVal = 5280., maxVal = 5700.)
+    dataGen = model.sample(minVal = 4800., maxVal = 5700.)
     fitter = gl.Fitter(model, backend = 'minuit')
     res = fitter.fit(dataGen, verbose = True)
 
     plotter = gl.Plotter(model, dataGen)
     plotter.plotDataModel(nDataBins = 100)
     plt.savefig('doubleGaussianFracTest.pdf')
+    plt.clf()
+
+    generatedParams = {'doubleGaussianFracModel/gauss1/mean' : 5279.,
+                       'doubleGaussianFracModel/gauss2/mean' : 5379.,
+                       'doubleGaussianFracModel/gauss1/sigma' : 15.,
+                       'doubleGaussianFracModel/gauss2/sigma' : 20.,
+                       'doubleGaussianFracModel/gaussFrac' : 0.75,
+                       'doubleGaussianFracModel/totalYield' : 10000.}
+
+    return parameterPullsOkay(generatedParams, model.getFloatingParameters())
+
+def testDoubleGaussianFracMCMC():
+
+    print('testDoubleGaussianFracMCMC')
+
+    model = doubleGaussianFracModel(5279., 15., 0.75, 5379., 20., 10000.)
+
+    dataGen = model.sample(minVal = 4800., maxVal = 5700.)
+    fitter = gl.Fitter(model, backend = 'emcee')
+    try:
+        res = fitter.fit(dataGen, verbose = True, nIterations = 10000, nWalkers = 12)
+    except:
+        # print(model.parameters)
+        exit(0)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('doubleGaussianFracMCMCTest.pdf')
+    plt.clf()
+
+    fig = plt.figure(figsize = (16, 12))
+
+    samples = res.chain[:, 200:, :].reshape((-1, model.getNFloatingParameters()))
+    c = corner.corner(samples, lw = 1.0)
+    c.savefig('doubleGaussianFracMCMCTestCorner.pdf')
     plt.clf()
 
     generatedParams = {'doubleGaussianFracModel/gauss1/mean' : 5279.,
@@ -881,32 +1055,30 @@ def testPriorGaussians():
 
     return parameterPullsOkay(generatedParams, model.getFloatingParameters()) and meanErrorOkay
 
-# def testSimpleARGaus():
-#
-#     print('testSimpleARGaus')
-#
-#     # Test generating and fitting back with the same model
-#
-#     model = simpleARGausModel(5400., 0.5, 10.0, 50., 100000)
-#
-#     dataGen = model.sample(minVal = 4800., maxVal = 5700.)
-#
-#     plt.hist(dataGen, bins = 50)
-#     plt.savefig('dataHist.pdf')
-#
-#     print(dataGen)
-#     print(dataGen.shape)
-#     exit(0)
-#
-#     fitter = gl.Fitter(model, backend = 'minuit')
-#     res = fitter.fit(dataGen, verbose = True)
-#
-#     plotter = gl.Plotter(model, dataGen)
-#     plotter.plotDataModel(nDataBins = 100)
-#     plt.savefig('simpleARGausTest.pdf')
-#     plt.clf()
+def testSimpleARGaus():
+
+    print('testSimpleARGaus')
+
+    # Test generating and fitting back with the same model
+
+    model = simpleARGausModel(5400., 0.5, 10.0, 30., 100)
+
+    dataGen = model.sample(minVal = 4800., maxVal = 5700.)
+
+    plt.hist(dataGen, bins = 150)
+    plt.savefig('dataHist.pdf')
+
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('simpleARGausTest.pdf')
+    plt.clf()
 
 if __name__ == '__main__':
 
-    print(testSimultaneousModelLarge())
+    # print(testSimultaneousModelLarge())
     # print(testSimpleARGaus())
+    print(testHierarchicalGaussians())
+    # print(testDoubleGaussianFracMCMC())
