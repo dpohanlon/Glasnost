@@ -708,6 +708,10 @@ class ARGaus(Distribution):
 
     def prob(self, data):
 
+        if len(data[data < self.minVal]) > 0 or len(data[data > self.maxVal]) > 0:
+            print('Data exists outside of the grid range - exiting.')
+            exit(1)
+
         grid = np.linspace(self.minVal, self.maxVal, self.gridSize)
 
         # For generalised ARGUS
@@ -717,8 +721,6 @@ class ARGaus(Distribution):
 
         # For Gaussian resolution
         s = self.sigma.value_
-
-        # print(c, p, chi, s)
 
         oneMinusChiOverCSq = (1. - (grid ** 2) / (c ** 2))
 
@@ -735,12 +737,10 @@ class ARGaus(Distribution):
 
         conv = convolve(argus, gaussian(len(grid), s), mode = 'same', method = 'fft')
 
-        # CHECK BOUNDS
-        # LERP
-
         pos = np.searchsorted(grid, data)
 
-        return conv[pos]
+        lerp = conv[pos - 1] + ((conv[pos] - conv[pos - 1]) / (grid[pos] - grid[pos - 1])) * (data - grid[pos - 1])
+        return lerp
 
     def hasDefaultPrior(self):
 
@@ -811,14 +811,16 @@ def testSimpleARGaus():
     fitter = gl.Fitter(model, backend = 'minuit')
     res = fitter.fit(dataGen, verbose = True)
 
+    from pprint import pprint
+
+    pprint(model.parameters)
+
     plotter = gl.Plotter(model, dataGen)
     plotter.plotDataModel(nDataBins = 100)
     plt.savefig('simpleARGausTest.pdf')
     plt.clf()
 
-    from pprint import pprint
-
-    pprint(model.parameters)
+    exit(0)
 
     fitterB = gl.Fitter(model, backend = 'emcee')
     res = fitterB.fit(dataGen, verbose = True, nIterations = 10000, nWalkers = 64) # * nparams
