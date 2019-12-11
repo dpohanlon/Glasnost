@@ -3,7 +3,7 @@ import numpy as np
 class RejectionSampler(object):
     """
 
-    Simple accept/reject 1D sampler with adaptive cieling value.
+    Simple accept/reject 1D sampler with adaptive ceiling value.
 
     """
 
@@ -36,3 +36,21 @@ class RejectionSampler(object):
                 samples.extend(list(xVals[yVals <= fVals]))
 
         return samples[:nSamples]
+
+    def sampleOnce(self, nSamples):
+
+        nSamples = int(nSamples)
+
+        samples = []
+
+        while len(samples) < nSamples:
+            xVal = np.random.uniform(self.min, self.max)
+            fVal = self.function(xVal)
+            yVal = np.random.uniform(0, self.ceiling)
+
+            if fVal > self.ceiling:
+                self.ceiling = fVal
+            elif yVal < fVal:
+                samples.append(xVal)
+
+        return samples

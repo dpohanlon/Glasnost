@@ -6,6 +6,8 @@ from scipy.special import erf, gamma, gammaincc, beta, betainc
 
 from scipy.signal import convolve, gaussian
 
+from scipy.integrate import quad, fixed_quad
+
 import glasnost as gl
 
 # Adaptive vectorised quadrature
@@ -96,7 +98,9 @@ class Distribution(object):
     def integral_(self, minVal, maxVal, valTuple):
 
         # Might need to fiddle with the tolerance sometimes
-        int, err = integrate_adaptive(self.prob, [minVal, maxVal], 1E-5)
+        # int, err = integrate_adaptive(self.prob, [minVal, maxVal], 1E-5)
+
+        int, err = fixed_quad(self.prob, minVal, maxVal, n = 30)
 
         return int
 
@@ -714,6 +718,8 @@ class ARGaus(Distribution):
         # For Gaussian resolution
         s = self.sigma.value_
 
+        # print(c, p, chi, s)
+
         oneMinusChiOverCSq = (1. - (grid ** 2) / (c ** 2))
 
         t1n = np.power(2., -p) * np.power(chi, 2. * (p + 1.))
@@ -726,14 +732,8 @@ class ARGaus(Distribution):
 
         # ARGUS undefined above c, but we want to convolve, so replace nans with zero
         argus[np.isnan(argus)] = 0.
-        # if np.isnan(argus):
-            # argus = 0
 
-        # print(np.array(argus).reshape(-1, 1).shape, gaussian(1, s).shape)
-
-        conv = convolve(argus, gaussian(1000, s), mode = 'same', method = 'fft')
-        # return convolve(np.array(argus).reshape(-1, 1), gaussian(1, s).reshape(-1, 1), mode = 'same', method = 'direct')
-        # return argus
+        conv = convolve(argus, gaussian(len(grid), s), mode = 'same', method = 'fft')
 
         # CHECK BOUNDS
         # LERP
@@ -763,6 +763,77 @@ class ARGaus(Distribution):
 
         return p * np.ones(data.shape)
 
+    @cachedmethod(cache = operator.attrgetter('cache'), key = hashkey)
+    def integral_(self, minVal, maxVal, valTuple):
+
+        # Seprate fixed order integrator as the others are slow / don't converge
+
+        int, err = fixed_quad(self.prob, minVal, maxVal, n = 30)
+
+        return int
+
+def simpleARGausModel(c, p, chi, sigma, nEvents):
+
+    with gl.name_scope('simpleARGausTest'):
+
+        cA = gl.Parameter(c, name = 'c', minVal = 4800., maxVal = 6000.)
+        pA = gl.Parameter(p, name = 'p', minVal = 0., maxVal = 5.)
+        chiA = gl.Parameter(chi, name = 'chi', minVal = 0., maxVal = 25.)
+        sigmaA = gl.Parameter(sigma, name = 'sigma', minVal = 0., maxVal = 100.)
+
+        argaus = gl.ARGaus({'c' : cA, 'chi' : chiA, 'p' :pA, 'sigma' : sigmaA}, minVal = 4800., maxVal = 6000., gridSize = 1000)
+
+        argausYield = gl.Parameter(nEvents, name = 'argausYield', minVal = 0.8 * nEvents, maxVal = 1.2 * nEvents)
+
+    fitYields = {argaus.name : argausYield}
+    fitComponents = {argaus.name : argaus}
+
+    model = gl.Model(initialFitYields = fitYields, initialFitComponents = fitComponents, minVal = 4800., maxVal = 6000.)
+
+    return model
+
+def testSimpleARGaus():
+
+    print('testSimpleARGaus')
+
+    # Test generating and fitting back with the same model
+
+    model = simpleARGausModel(5400., 1.1, 8., 30., 10000.)
+
+    dataGen = model.sample(minVal = 4800., maxVal = 6000.)
+
+    plt.hist(dataGen, bins = 150)
+    plt.savefig('dataHist.pdf')
+    plt.clf()
+
+    print('Fitting')
+
+    fitter = gl.Fitter(model, backend = 'minuit')
+    res = fitter.fit(dataGen, verbose = True)
+
+    plotter = gl.Plotter(model, dataGen)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('simpleARGausTest.pdf')
+    plt.clf()
+
+    from pprint import pprint
+
+    pprint(model.parameters)
+
+    fitterB = gl.Fitter(model, backend = 'emcee')
+    res = fitterB.fit(dataGen, verbose = True, nIterations = 10000, nWalkers = 64) # * nparams
+
+    import corner
+
+    fig = plt.figure(figsize = (16, 12))
+
+    samples = res.chain[:, 1000:, :].reshape((-1, 5))
+    c = corner.corner(samples, lw = 1.0)
+    c.savefig('argaus-corner.pdf')
+    plt.clf()
+
+    pprint(model.parameters)
+
 if __name__ == '__main__':
 
     import matplotlib as mpl
@@ -786,23 +857,51 @@ if __name__ == '__main__':
 
     rcParams.update({'figure.autolayout': True})
 
+    testSimpleARGaus()
+
+    exit(0)
+
     from parameter import Parameter
 
-    c = Parameter(5400., 'c')
-    p = Parameter(0.5, 'p')
-    chi = Parameter(10., 'chi')
-    s = Parameter(30., 's')
+    # c = Parameter(5400., 'c')
+    # p = Parameter(0.5, 'p')
+    # chi = Parameter(10., 'chi')
+    # s = Parameter(30., 's')
+
+    c = Parameter(5400., minVal = 5300., maxVal = 5500.,  name = 'c')
+    p = Parameter(0.5, minVal = -1.0, maxVal = 1.0, name = 'p')
+    chi = Parameter(10., minVal = 0., maxVal = 30., name = 'chi')
+    s = Parameter(30., minVal = 5., maxVal = 50., name = 'sigma')
 
     a = ARGaus(parameters = {'c' : c, 'p': p, 'chi' : chi, 'sigma' : s},
-               minVal = 5000, maxVal = 5800, gridSize = 1000)
+               minVal = 5000., maxVal = 5800., gridSize = 1000)
 
-    data = a.sample(1000000, 5000, 5800)
+    data = a.sample(10000, 5000, 5800)
     plt.hist(data, bins = 200)
     plt.savefig('argaus.pdf')
     plt.clf()
 
-    x = np.linspace(5000, 5500, 1000)
-    # x = np.array(sorted(np.random.uniform(5000, 5500, 10000)))
-    l = a.prob(x)
-    plt.plot(x, l, lw = 1.0)
-    plt.savefig('argaus_plot.pdf')
+    print('generated')
+
+    from model import Model
+
+    y = gl.Parameter(10000., name = 'yield', minVal = 5000., maxVal = 15000.,)
+
+    m = Model(name = 'model', initialFitYields = {'yield' : y}, initialFitComponents = {'a' : a})
+
+    from fitter import Fitter
+
+    fitter = Fitter(m, backend = 'minuit')
+    res = fitter.fit(data, verbose = True)
+
+    from plotter import Plotter
+
+    plotter = gl.Plotter(m, data)
+    plotter.plotDataModel(nDataBins = 100)
+    plt.savefig('argaus_fit.pdf')
+    plt.clf()
+
+    # x = np.linspace(5000, 5500, 1000)
+    # l = a.prob(x)
+    # plt.plot(x, l, lw = 1.0)
+    # plt.savefig('argaus_plot.pdf')
