@@ -98,9 +98,7 @@ class Distribution(object):
     def integral_(self, minVal, maxVal, valTuple):
 
         # Might need to fiddle with the tolerance sometimes
-        # int, err = integrate_adaptive(self.prob, [minVal, maxVal], 1E-5)
-
-        int, err = fixed_quad(self.prob, minVal, maxVal, n = 30)
+        int, err = integrate_adaptive(self.prob, [minVal, maxVal], 1E-5)
 
         return int
 
