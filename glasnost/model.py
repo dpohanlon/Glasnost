@@ -82,7 +82,18 @@ class Model(Distribution):
 
         # Also screws up shelving
 
-        self.func_code = make_func_code(self.floatingParameterNames)
+    def useMinuit(self, b = True):
+
+        # For iminuit's parameter introspection
+        # Gets screwed up if parameters are changed between fixed and floating
+        # Make sure this is propagated (somehow?)
+
+        # Also screws up pickling (required for ThreadPool)
+
+        if b:
+            self.func_code = make_func_code(self.floatingParameterNames)
+        else:
+            self.func_code = None
 
     # Only floating
     def getComponentFloatingParameterNames(self):
