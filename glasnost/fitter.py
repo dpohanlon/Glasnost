@@ -119,25 +119,25 @@ class Fitter(object):
 
             return minuit, minuitRet, hesseRet
 
-            if self.backend in ['emcee']:
+        if self.backend in ['emcee']:
 
-                params = self.model.floatingParameterNames
+            params = self.model.floatingParameterNames
 
-                initParams = np.array([self.model.parameters[p].value_ for p in params])
-                ndim = len(initParams)
+            initParams = np.array([self.model.parameters[p].value_ for p in params])
+            ndim = len(initParams)
 
-                ipos = [initParams + 1e-4 * np.random.randn(ndim) for i in range(nWalkers)]
+            ipos = [initParams + 1e-4 * np.random.randn(ndim) for i in range(nWalkers)]
 
-                with Pool(nCPU) as pool:
+            with Pool(nCPU) as pool:
 
-                    minimiser = emcee.EnsembleSampler(nWalkers, ndim, self.model.logL, pool=pool)
+                minimiser = emcee.EnsembleSampler(nWalkers, ndim, self.model.logL, pool=pool)
 
-                    # A hack for a tqdm progress bar
-                    for pos, lnp, rstate in tqdm(minimiser.sample(ipos, iterations = nIterations),
-                                                 desc = 'Running Emcee',
-                                                 total = nIterations):
-                        pass
+                # A hack for a tqdm progress bar
+                for pos, lnp, rstate in tqdm(minimiser.sample(ipos, iterations = nIterations),
+                                             desc = 'Running Emcee',
+                                             total = nIterations):
+                    pass
 
-                    self.postProcessMCMC(minimiser)
+                self.postProcessMCMC(minimiser)
 
-                return minimiser
+            return minimiser
