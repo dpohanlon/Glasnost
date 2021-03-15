@@ -4,6 +4,9 @@ import re
 
 import glasnost as gl
 
+import inspect
+from pprint import pprint
+
 class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     """
@@ -44,7 +47,7 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
         self.error_ = None
 
-        self.rangeOK = self.testRangeOK()
+        self.rangeOK = self.fixed_ or self.testRangeOK()
 
     def __repr__(self):
         if not self.error_:
@@ -75,17 +78,22 @@ class Parameter(np.lib.mixins.NDArrayOperatorsMixin, object):
 
     @property
     def value(self):
+        # curframe = inspect.currentframe()
+        # calframe = inspect.getouterframes(curframe, 2)
+        # print(self.value_)
+        # print(pprint(calframe))
+        # print('')
         if self.derived_ == False:
             return self.value_
         else:
             return eval(self.transform_).value
 
     def testRangeOK(self):
-        return not ( (self.min and self.value < self.min) or (self.max and self.value > self.max) )
+        return not ( (self.value < self.min) or (self.value > self.max) )
 
     def updateValue(self, value):
         self.value_ = value
-        self.rangeOK = self.testRangeOK()
+        self.rangeOK = self.fixed_ or self.testRangeOK()
 
     @property
     def error(self):

@@ -429,7 +429,6 @@ class Model(Distribution):
 
         for i, n in enumerate(names):
             self.parameters[n].updateValue(params[i])
-
             if not self.parameters[n].rangeOK:
                 return -np.inf
 
