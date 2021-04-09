@@ -94,7 +94,7 @@ class Fitter(object):
         if self.backend in ['minuit', 'minuit-migrad-hesse', 'minos', 'minuit-minos']:
 
             # Initialise Minuit class from iminuit
-            minuit = Minuit(self.model, errordef = 1.0, **self.model.getInitialParameterValuesAndStepSizes())
+            minuit = Minuit(self.model, **self.model.getInitialParameterValuesAndStepSizes())
 
             stdout = sys.stdout
 
