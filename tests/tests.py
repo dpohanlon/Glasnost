@@ -560,6 +560,7 @@ def testSimpleGaussian():
     # Test generating and fitting back with the same model
 
     model = simpleGaussianModel(4200., 20., 1E6)
+    model.useMinuit()
 
     dataGen = model.sample(minVal = 4200., maxVal = 5700.)
     fitter = gl.Fitter(model, backend = 'minuit')
@@ -579,6 +580,7 @@ def testSimpleGaussian():
 def testStudentsT():
 
     model = studentsTModel(5279., 20., 1.5, 1000000.)
+    model.useMinuit()
 
     dataGen = model.sample(minVal = 5000., maxVal = 5600.)
     fitter = gl.Fitter(model, backend = 'minuit')
@@ -603,6 +605,7 @@ def testSimpleGaussianWithExp():
     # Test generating and fitting back with the same model
 
     model = simpleGaussianWithExpModel(5279., 150., -0.002, 1000000., 2000000.)
+    model.useMinuit()
 
     dataGen = model.sample(minVal = 4200., maxVal = 6000.)
     fitter = gl.Fitter(model, backend = 'minuit')
@@ -628,6 +631,7 @@ def testSimpleGaussianWithUniform():
     print('testSimpleGaussianWithUniform')
 
     model = simpleGaussianWithUniformModel(5279., 150., 1000000., 2000000.)
+    model.useMinuit()
 
     dataGen = model.sample(minVal = 4200., maxVal = 6000.)
     fitter = gl.Fitter(model, backend = 'minuit')
@@ -652,6 +656,7 @@ def testSimpleGaussianGen():
     # Test generating with NumPy and fitting back with a similar model
 
     model = simpleGaussianModel(5270., 23., 1050000.) # Similar enough to what is generated
+    model.useMinuit()
 
     dataNumpy = np.random.normal(5279, 20, 1000000)
     dataNumpy = dataNumpy[(dataNumpy > 4200) & (dataNumpy < 5700)]
@@ -707,6 +712,7 @@ def testSimpleCB():
     # Test generating and fitting back with the same model
 
     model = simpleCBModel(0., 1., 1.0, 1.1, 100000.)
+    model.useMinuit()
 
     dataGen = model.sample(minVal = -10, maxVal = 10.)
     fitter = gl.Fitter(model, backend = 'minuit')
@@ -729,6 +735,7 @@ def testSimultaneousGaussians():
     print('testSimultaneousGaussians')
 
     simModel, model1, model2 = simultaneousGaussiansModel(5279., 15., 500000, 30., 300000)
+    simModel.useMinuit()
 
     dataGen = simModel.sample(minVal = 5000., maxVal = 5600.)
     fitter = gl.Fitter(simModel, backend = 'minuit')
@@ -761,6 +768,8 @@ def testHierarchicalGaussians():
     # simModel, model1, model2, model3 = hierarchicalGaussiansModel(mean1 = 5279., delta1 = 10., delta2 = -1., delta3 = 2., width1 = 40., nEvents1 = 100., width2 = 20., nEvents2 = 1000., width3 = 10., nEvents3 = 2000.)
     simModel, model1, model2, model3 = hierarchicalGaussiansModel(mean1 = 5279., delta1 = 0., delta2 = 0., delta3 = 0., width1 = 40., nEvents1 = 100., width2 = 20., nEvents2 = 1000., width3 = 10., nEvents3 = 2000.)
     dataGen = simModel.sample(minVal = 4800., maxVal = 5600.)
+
+    simModel.useMinuit()
 
     # simModel, model1, model2, model3 = hierarchicalGaussiansModel(mean1 = 5279., delta1 = 0., delta2 = 0., delta3 = 0., width1 = 40., nEvents1 = 100., width2 = 20., nEvents2 = 1000., width3 = 10., nEvents3 = 2000.)
 
@@ -826,6 +835,7 @@ def testSimultaneousModelLarge():
     nBkg = (10000., 10000., 10000., 10000.)
 
     simModel, (model1, model2, model3, model4) = simultaneousModelLarge(5279., 15., 35., -0.003, nSignal, nBkg)
+    simModel.useMinuit()
 
     dataGen = simModel.sample(minVal = 5000., maxVal = 5600.)
 
@@ -878,6 +888,7 @@ def testDoubleGaussianYields():
     print('testDoubleGaussianYields')
 
     model = doubleGaussianYieldsModel(5279., 20., 50000, 5379., 20., 30000)
+    model.useMinuit()
 
     dataGen = model.sample(minVal = 4800., maxVal = 5700.)
     fitter = gl.Fitter(model, backend = 'minuit')
@@ -902,6 +913,7 @@ def testDoubleGaussianFrac():
     print('testDoubleGaussianFrac')
 
     model = doubleGaussianFracModel(5279., 15., 0.75, 5379., 20., 10000.)
+    model.useMinuit()
 
     dataGen = model.sample(minVal = 4800., maxVal = 5700.)
     fitter = gl.Fitter(model, backend = 'minuit')
@@ -930,7 +942,7 @@ def testDoubleGaussianFracMCMC():
     dataGen = model.sample(minVal = 4800., maxVal = 5700.)
     fitter = gl.Fitter(model, backend = 'emcee')
     try:
-        res = fitter.fit(dataGen, verbose = True, nIterations = 10000, nWalkers = 12)
+        res = fitter.fit(dataGen, verbose = True, nIterations = 1000, nWalkers = 12)
     except:
         # print(model.parameters)
         exit(0)
@@ -961,6 +973,7 @@ def testConstrainedGaussians():
     print('testConstrainedGaussians')
 
     model = constrainedGaussiansModel(5300., 20., 100., 100000.)
+    model.useMinuit()
 
     dataGen = model.sample(minVal = 4200., maxVal = 5700.)
     fitter = gl.Fitter(model, backend = 'minuit')
@@ -990,6 +1003,7 @@ def testExternConstrainedGaussians():
     print('testExternConstrainedGaussians')
 
     model = externConstrainedGaussiansModel(5300., 20., 100., 100000.)
+    model.useMinuit()
 
     dataGen = np.concatenate( (np.random.normal(5400, 30, size = int(100.)),
                               np.random.normal(5500, 15, size = int(100000.)),
@@ -1031,6 +1045,7 @@ def testPriorGaussians():
     print('testPriorGaussians')
 
     model = priorGaussiansModel(5300., 20., 100., 100000.)
+    model.useMinuit()
 
     dataGen = np.concatenate( (np.random.normal(5400, 30, size = int(100.)),
                               np.random.normal(5500, 15, size = int(100000.)),
@@ -1062,6 +1077,7 @@ def testSimpleARGaus():
     # Test generating and fitting back with the same model
 
     model = simpleARGausModel(5400., 0.5, 10.0, 30., 100)
+    model.useMinuit()
 
     dataGen = model.sample(minVal = 4800., maxVal = 5700.)
 
@@ -1078,7 +1094,7 @@ def testSimpleARGaus():
 
 if __name__ == '__main__':
 
-    # print(testSimultaneousModelLarge())
+    print(testSimultaneousModelLarge())
     # print(testSimpleARGaus())
-    print(testHierarchicalGaussians())
+    # print(testHierarchicalGaussians())
     # print(testDoubleGaussianFracMCMC())
